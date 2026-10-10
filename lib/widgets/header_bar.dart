@@ -63,9 +63,9 @@ class HeaderBar extends StatelessWidget implements PreferredSizeWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Axom 2.0 Pro',
+                      'Axom AI',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: AppTheme.textPrimary,
                       ),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Brand Colors matching chat.aiaxom.co.in
-  static const Color bgMain = Color(0xFF06060B);
-  static const Color bgSidebar = Color(0xFF090A14);
+  // Brand Color Palette - 100% Exact Parity with https://chat.aiaxom.co.in/
+  static const Color bgMain = Color(0xFF0B1220); // Deep Obsidian Cyber Navy
+  static const Color bgSidebar = Color(0xFF090A14); // Deep Night
   static const Color bgCard = Color(0xFF0E101F);
   static const Color bgSurface = Color(0xFF0E101F);
   static const Color bgCardHover = Color(0xFF13162B);
@@ -18,56 +18,76 @@ class AppTheme {
   static const Color textMuted = Color(0xFF64748B);
   static const Color textDim = Color(0xFF475569);
 
-  // Accent & Gradients
-  static const Color accentPurple = Color(0xFFC084FC);
-  static const Color accentPink = Color(0xFFE879F9);
-  static const Color accentViolet = Color(0xFFA855F7);
+  // Signature Axom AI Brand Accents (Emerald Green & Amber Gold & Cyan)
+  static const Color accentEmerald = Color(0xFF34D399); // Brand primary
+  static const Color accentAmber = Color(0xFFFBBF24); // Brand secondary
+  static const Color accentPurple = Color(0xFF34D399); // Aliased to brand primary
+  static const Color accentPink = Color(0xFFFBBF24); // Aliased to brand gold
+  static const Color accentViolet = Color(0xFF10B981);
   static const Color accentCyan = Color(0xFF38BDF8);
   static const Color accentBlue = Color(0xFF60A5FA);
-  static const Color successGreen = Color(0xFF4ADE80);
+  static const Color successGreen = Color(0xFF34D399);
   static const Color errorRed = Color(0xFFF87171);
 
-  // Borders
+  // Borders & Glassmorphism
   static const Color borderColor = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
   static const Color glassBorder = Color(0x14FFFFFF);
-  static const Color borderFocus = Color(0x80C084FC);
-  static const Color borderGlow = Color(0x4DC084FC);
+  static const Color borderFocus = Color(0x8034D399); // rgba(52, 211, 153, 0.5)
+  static const Color borderGlow = Color(0x5934D399); // rgba(52, 211, 153, 0.35)
 
-  // Gradients
+  // Gradients matching web chat
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [accentPurple, accentPink],
+    colors: [Color(0xFF34D399), Color(0xFFFBBF24)], // #34d399 -> #fbbf24
+  );
+
+  static const LinearGradient brandTextGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFFFFF), Color(0xFFA7F3D0)],
   );
 
   static const LinearGradient glowGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0x59C084FC), Color(0x59E879F9)],
+    colors: [Color(0x5934D399), Color(0x59FBBF24)],
+  );
+
+  static const RadialGradient orbGradient = RadialGradient(
+    colors: [
+      Color(0xFF34D399),
+      Color(0xFF10B981),
+      Color(0xFF14B8A6),
+      Color(0xFF0B1220),
+    ],
+    stops: [0.0, 0.4, 0.8, 1.0],
   );
 
   static const LinearGradient userBubbleGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF2E1065), Color(0xFF1E1B4B)],
+    colors: [Color(0xFF23273A), Color(0xFF1E2235)],
   );
 
+  // Dark Theme
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bgMain,
-      primaryColor: accentPurple,
+      primaryColor: accentEmerald,
       colorScheme: const ColorScheme.dark(
-        primary: accentPurple,
-        secondary: accentPink,
+        primary: accentEmerald,
+        secondary: accentAmber,
         surface: bgCard,
       ),
-      textTheme: GoogleFonts.interTextTheme(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
         ThemeData.dark().textTheme,
       ).apply(
         bodyColor: textPrimary,
         displayColor: textPrimary,
         fontFamilyFallback: const [
+          'Plus Jakarta Sans',
           'Inter',
           'Segoe UI',
           'Roboto',
@@ -87,22 +107,24 @@ class AppTheme {
     );
   }
 
+  // Light Theme
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-      primaryColor: accentPurple,
+      primaryColor: accentEmerald,
       colorScheme: const ColorScheme.light(
-        primary: accentPurple,
-        secondary: accentPink,
+        primary: accentEmerald,
+        secondary: accentAmber,
         surface: Colors.white,
       ),
-      textTheme: GoogleFonts.interTextTheme(
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
         ThemeData.light().textTheme,
       ).apply(
         bodyColor: const Color(0xFF0F172A),
         displayColor: const Color(0xFF0F172A),
         fontFamilyFallback: const [
+          'Plus Jakarta Sans',
           'Inter',
           'Segoe UI',
           'Roboto',

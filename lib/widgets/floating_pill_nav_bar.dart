@@ -98,19 +98,13 @@ class FloatingPillNavBar extends StatelessWidget {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            gradient: isActive
-                ? const LinearGradient(
-                    colors: [AppTheme.accentPurple, AppTheme.accentViolet],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
+            gradient: isActive ? AppTheme.primaryGradient : null,
             color: isActive ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(24),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppTheme.accentPurple.withValues(alpha: 0.35),
+                      color: AppTheme.accentEmerald.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 3),
                     ),
