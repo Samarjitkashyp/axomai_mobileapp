@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -21,6 +23,7 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _copied = false;
+  bool _isExporting = false;
   String? _feedback;
 
   void _handleCopy() {
@@ -29,6 +32,33 @@ class _MessageBubbleState extends State<MessageBubble> {
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _copied = false);
     });
+  }
+
+  Future<void> _handleExportDocx() async {
+    setState(() => _isExporting = true);
+    final res = await ApiService.exportChatDocx(
+      title: 'Axom AI Chat Response',
+      messages: [
+        {'role': 'assistant', 'text': widget.message.text}
+      ],
+    );
+
+    if (!mounted) return;
+    setState(() => _isExporting = false);
+
+    if (res['success'] == true && res['download_url'] != null) {
+      final uri = Uri.parse(res['download_url']);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('📄 Exported Word DOCX successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(res['error'] ?? 'Export failed.')),
+      );
+    }
   }
 
   Future<void> _openSourceUrl(String url) async {
@@ -58,7 +88,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               decoration: BoxDecoration(
-                color: const Color(0xFF23273A), // Clean ChatGPT style dark capsule
+                color: const Color(0xFF23273A),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(18),
                   topRight: Radius.circular(18),
@@ -99,11 +129,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                 color: Colors.white.withValues(alpha: 0.15),
               ),
             ),
-            alignment: Alignment.center,
             child: const Icon(
               Icons.person_rounded,
-              color: Color(0xFFE2E8F0),
-              size: 18,
+              color: Colors.white70,
+              size: 16,
             ),
           ),
         ],
@@ -115,65 +144,59 @@ class _MessageBubbleState extends State<MessageBubble> {
     final msg = widget.message;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sleek AI Emblem Avatar
+          // AI Icon Avatar
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
             alignment: Alignment.center,
             child: const Icon(
               Icons.auto_awesome,
               color: Colors.white,
-              size: 16,
+              size: 15,
             ),
           ),
           const SizedBox(width: 10),
 
-          // Message Container
+          // Message Card Content
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(15.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
               decoration: BoxDecoration(
                 color: AppTheme.bgCard,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(5),
+                  topRight: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(18),
+                ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: AppTheme.borderColor,
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.22),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Meta Row: Model label, Web Search badge & Action buttons
+                  // Top Meta Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -182,185 +205,128 @@ class _MessageBubbleState extends State<MessageBubble> {
                           Text(
                             msg.model,
                             style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.accentPurple,
                             ),
                           ),
                           if (msg.webSearch) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0284C7)
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: const Color(0xFF38BDF8)
-                                      .withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
+                                color: AppTheme.accentCyan.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.accentCyan.withOpacity(0.4)),
                               ),
                               child: const Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.public_rounded,
-                                      size: 11, color: Color(0xFF38BDF8)),
-                                  SizedBox(width: 4),
+                                  Icon(Icons.language_rounded, size: 10, color: AppTheme.accentCyan),
+                                  SizedBox(width: 3),
                                   Text(
-                                    'Web Search',
+                                    'Web Grounded',
                                     style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF38BDF8),
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.accentCyan,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ],
-                          if (msg.fromDatabase) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: AppTheme.successGreen
-                                    .withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppTheme.successGreen
-                                      .withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Text(
-                                '📁 Database Match',
-                                style: TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.successGreen,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
-                      // Copy Button
-                      InkWell(
-                        onTap: _handleCopy,
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _copied ? Icons.check : Icons.copy_rounded,
-                                size: 12,
-                                color: _copied
-                                    ? AppTheme.successGreen
-                                    : AppTheme.textSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _copied ? 'Copied!' : 'Copy',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: _copied
-                                      ? AppTheme.successGreen
-                                      : AppTheme.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                      Row(
+                        children: [
+                          if (_isExporting)
+                            const SpinKitRing(color: AppTheme.accentCyan, size: 14, lineWidth: 2)
+                          else
+                            IconButton(
+                              icon: const Icon(Icons.download_rounded, size: 16, color: AppTheme.textMuted),
+                              tooltip: 'Export to Word (.docx)',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _handleExportDocx,
+                            ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(
+                              _copied ? Icons.check_rounded : Icons.copy_rounded,
+                              size: 15,
+                              color: _copied ? AppTheme.successGreen : AppTheme.textMuted,
+                            ),
+                            tooltip: 'Copy response',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _handleCopy,
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
 
-                  // ChatGPT-style Web Search Sources Carousel / Chips
-                  if (msg.webSearch && msg.sources.isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                  // Web Sources Chips
+                  if (msg.sources.isNotEmpty) ...[
+                    const SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(Icons.travel_explore_rounded,
-                                size: 13, color: Color(0xFF94A3B8)),
-                            const SizedBox(width: 6),
+                            Icon(Icons.search_rounded, size: 12, color: Color(0xFF94A3B8)),
+                            SizedBox(width: 4),
                             Text(
-                              'Sources (${msg.sources.length})',
-                              style: const TextStyle(
-                                fontSize: 11.5,
+                              'Grounded Web Sources:',
+                              style: TextStyle(
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFFCBD5E1),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 34,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: msg.sources.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(width: 8),
-                            itemBuilder: (context, idx) {
-                              final src = msg.sources[idx];
-                              String domain = src.title;
-                              try {
-                                domain = Uri.parse(src.uri)
-                                    .host
-                                    .replaceFirst('www.', '');
-                              } catch (_) {}
-                              return InkWell(
-                                onTap: () => _openSourceUrl(src.uri),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 9, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF191D30),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.08),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.link_rounded,
-                                          size: 12, color: Color(0xFF94A3B8)),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        domain,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Color(0xFFE2E8F0),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: msg.sources.map((src) {
+                            String domain = src.title;
+                            try {
+                              domain = Uri.parse(src.uri).host.replaceFirst('www.', '');
+                            } catch (_) {}
+                            return InkWell(
+                              onTap: () => _openSourceUrl(src.uri),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF191D30),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                                 ),
-                              );
-                            },
-                          ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.link_rounded, size: 11, color: AppTheme.accentCyan),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      domain,
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFFE2E8F0)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
                   ],
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
-                  // Markdown Body with ChatGPT Neutral, Clean Typography (No Pink!)
+                  // Markdown Body
                   MarkdownBody(
                     data: msg.text,
                     selectable: true,
@@ -368,69 +334,27 @@ class _MessageBubbleState extends State<MessageBubble> {
                       p: const TextStyle(
                         fontSize: 14.5,
                         height: 1.6,
-                        color: Color(0xFFECECF1), // Crisp, readable ChatGPT off-white
-                      ),
-                      h1: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.4,
-                      ),
-                      h2: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.4,
-                      ),
-                      h3: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        height: 1.4,
-                      ),
-                      strong: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                      em: const TextStyle(
-                        fontStyle: FontStyle.italic,
                         color: Color(0xFFECECF1),
                       ),
+                      h1: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, height: 1.4),
+                      h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, height: 1.4),
+                      h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, height: 1.4),
+                      strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                      em: const TextStyle(fontStyle: FontStyle.italic, color: Color(0xFFECECF1)),
                       code: const TextStyle(
                         backgroundColor: Color(0xFF1B1E30),
-                        color: Color(0xFFE2E8F0), // Clean neutral code text (Not pink)
+                        color: Color(0xFF38BDF8),
                         fontSize: 12.5,
                         fontFamily: 'monospace',
                       ),
                       codeblockDecoration: BoxDecoration(
                         color: const Color(0xFF121422),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                       ),
                       codeblockPadding: const EdgeInsets.all(12),
-                      listBullet: const TextStyle(
-                        color: Color(0xFFCBD5E1), // Clean neutral bullet (Not pink)
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      blockquote: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontStyle: FontStyle.italic,
-                        fontSize: 14,
-                      ),
-                      blockquoteDecoration: const BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: Color(0xFF64748B),
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      a: const TextStyle(
-                        color: Color(0xFF60A5FA), // Modern web link blue
-                        decoration: TextDecoration.underline,
-                      ),
+                      listBullet: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 14, fontWeight: FontWeight.bold),
+                      a: const TextStyle(color: Color(0xFF60A5FA), decoration: TextDecoration.underline),
                     ),
                   ),
 
@@ -440,13 +364,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                     children: [
                       if (_feedback != null)
                         Text(
-                          _feedback == 'up'
-                              ? '👍 Helpful'
-                              : '👎 Thanks for feedback',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.textMuted,
-                          ),
+                          _feedback == 'up' ? '👍 Helpful' : '👎 Thanks for feedback',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
                         )
                       else ...[
                         InkWell(
@@ -458,8 +377,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: AppTheme.borderColor),
                             ),
-                            child: const Icon(Icons.thumb_up_alt_outlined,
-                                size: 12, color: AppTheme.textMuted),
+                            child: const Icon(Icons.thumb_up_alt_outlined, size: 12, color: AppTheme.textMuted),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -472,8 +390,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: AppTheme.borderColor),
                             ),
-                            child: const Icon(Icons.thumb_down_alt_outlined,
-                                size: 12, color: AppTheme.textMuted),
+                            child: const Icon(Icons.thumb_down_alt_outlined, size: 12, color: AppTheme.textMuted),
                           ),
                         ),
                       ],

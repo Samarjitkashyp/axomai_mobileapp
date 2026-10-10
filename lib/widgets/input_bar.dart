@@ -6,8 +6,11 @@ class InputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool isLoading;
   final bool webSearch;
+  final bool isAssameseTranslit;
   final VoidCallback onToggleWebSearch;
+  final VoidCallback onToggleTranslit;
   final VoidCallback onOpenTools;
+  final VoidCallback onPickAttachment;
   final VoidCallback onSend;
   final double? bottomPadding;
 
@@ -16,8 +19,11 @@ class InputBar extends StatelessWidget {
     required this.controller,
     required this.isLoading,
     required this.webSearch,
+    this.isAssameseTranslit = false,
     required this.onToggleWebSearch,
+    required this.onToggleTranslit,
     required this.onOpenTools,
+    required this.onPickAttachment,
     required this.onSend,
     this.bottomPadding,
   });
@@ -26,9 +32,6 @@ class InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-    // When keyboard is open, FloatingPillNavBar auto-hides, so only minimal padding is needed.
-    // When keyboard is closed, FloatingPillNavBar is 62px tall + 16px bottom margin + safeBottom.
-    // We add safeBottom + (bottomPadding ?? 92) so the input box sits completely above the navbar.
     final effectiveBottom = isKeyboardOpen
         ? (safeBottom + 8)
         : ((bottomPadding ?? 92) + safeBottom);
@@ -55,7 +58,9 @@ class InputBar extends StatelessWidget {
               color: AppTheme.bgInput,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: AppTheme.borderColor,
+                color: isAssameseTranslit
+                    ? AppTheme.accentPurple.withOpacity(0.5)
+                    : AppTheme.borderColor,
                 width: 1,
               ),
               boxShadow: [
@@ -70,17 +75,17 @@ class InputBar extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top Row: Paperclip & Text Input
+                // Top Row: Attachment & Text Input
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.attach_file_rounded,
-                          color: AppTheme.textSecondary, size: 20),
+                      icon: const Icon(Icons.add_photo_alternate_rounded,
+                          color: AppTheme.textSecondary, size: 21),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      onPressed: onOpenTools,
-                      tooltip: 'Attach document or tools',
+                      onPressed: onPickAttachment,
+                      tooltip: 'Attach Image / OCR',
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -98,15 +103,17 @@ class InputBar extends StatelessWidget {
                             color: AppTheme.textPrimary,
                             fontSize: 14.5,
                           ),
-                          decoration: const InputDecoration(
-                            hintText: 'Message Axom AI...',
-                            hintStyle: TextStyle(
+                          decoration: InputDecoration(
+                            hintText: isAssameseTranslit
+                                ? 'অসমীয়াত লিখক (e.g. axom)...'
+                                : 'Message Axom AI...',
+                            hintStyle: const TextStyle(
                               color: AppTheme.textMuted,
                               fontSize: 14.5,
                             ),
                             border: InputBorder.none,
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                         ),
                       ),
@@ -123,21 +130,49 @@ class InputBar extends StatelessWidget {
                     // Left Control Pills
                     Row(
                       children: [
-                        // Language Pill (Replies in Assamese)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.bgPill,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.borderColor),
-                          ),
-                          child: const Text(
-                            '⇄ Reply in অসমীয়া',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textSecondary,
+                        // Assamese Transliteration Toggle Pill
+                        InkWell(
+                          onTap: onToggleTranslit,
+                          borderRadius: BorderRadius.circular(12),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isAssameseTranslit
+                                  ? AppTheme.accentPurple.withOpacity(0.2)
+                                  : AppTheme.bgPill,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isAssameseTranslit
+                                    ? AppTheme.accentPurple.withOpacity(0.6)
+                                    : AppTheme.borderColor,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'অ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isAssameseTranslit
+                                        ? AppTheme.accentPurple
+                                        : AppTheme.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isAssameseTranslit ? 'অসমীয়া ON' : 'অসমীয়া',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: isAssameseTranslit
+                                        ? AppTheme.accentPurple
+                                        : AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -203,13 +238,13 @@ class InputBar extends StatelessWidget {
                             child: const Row(
                               children: [
                                 Icon(
-                                  Icons.build_rounded,
+                                  Icons.dashboard_customize_rounded,
                                   size: 11,
                                   color: AppTheme.textSecondary,
                                 ),
                                 SizedBox(width: 4),
                                 Text(
-                                  'Tools',
+                                  '31+ Tools',
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,

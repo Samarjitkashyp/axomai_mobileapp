@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../services/api_service.dart';
@@ -41,6 +43,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _activeSessionId;
   bool _isLoading = false;
   bool _webSearch = false;
+  bool _isAssameseTranslit = false;
   String? _streamingText;
   AuthUser _currentUser = AuthUser.guest();
 
@@ -83,7 +86,6 @@ class _ChatScreenState extends State<ChatScreen> {
           _activeSessionId = _sessions.first.id;
         }
       } else {
-        // Create initial default session
         final newSession = ChatSession.create();
         _sessions.add(newSession);
         _activeSessionId = newSession.id;
@@ -92,7 +94,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _saveState();
 
-    // Background sync user session status with server
     AuthService.syncUserStatus().then((synced) {
       if (mounted) {
         setState(() => _currentUser = synced);
@@ -164,9 +165,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _saveState();
   }
 
-  Future<void> _handleSendMessage() async {
-    final text = _inputController.text.trim();
+  Future<void> _handleSendMessage([String? overrideText]) async {
+    String text = overrideText ?? _inputController.text.trim();
     if (text.isEmpty || _isLoading) return;
+
+    if (_isAssameseTranslit && overrideText == null) {
+      text = await ApiService.transliterateAssamese(text);
+    }
 
     _inputController.clear();
 
@@ -176,7 +181,6 @@ class _ChatScreenState extends State<ChatScreen> {
       session = _currentSession!;
     }
 
-    // Generate smart title from first message
     if (session.messages.isEmpty) {
       session.title = text.length > 28 ? '${text.substring(0, 28)}...' : text;
     }
@@ -196,7 +200,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _saveState();
     _scrollToBottom();
 
-    // Call API with token callback
     final result = await ApiService.sendMessage(
       prompt: text,
       webSearch: _webSearch,
@@ -233,6 +236,45 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       _saveState();
       _scrollToBottom();
+    }
+  }
+
+  Future<void> _handlePickAttachment() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        final isImage = ['jpg', 'jpeg', 'png', 'webp'].contains(file.extension?.toLowerCase());
+
+        if (isImage) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🔍 Extracting OCR text from ${file.name}...'),
+              backgroundColor: AppTheme.accentPurple,
+            ),
+          );
+          final ocrRes = await ApiService.performOCR(file);
+          if (ocrRes['success'] == true && ocrRes['text'] != null) {
+            final extracted = ocrRes['text'].toString().trim();
+            if (extracted.isNotEmpty) {
+              _inputController.text = 'Analyze this extracted image text:\n\n$extracted';
+            }
+          } else {
+            _inputController.text = 'Attached image: ${file.name}. Please explain the visual contents.';
+          }
+        } else {
+          _inputController.text = 'Attached document: ${file.name}. Please provide a comprehensive summary.';
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Attachment error: $e')),
+      );
     }
   }
 
@@ -356,12 +398,35 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: isChatEmpty
                   ? Center(
-                      child: LandingHero(
-                        username: _currentUser.isAuthenticated
-                            ? (_currentUser.name.isNotEmpty
-                                ? _currentUser.name
-                                : _currentUser.username)
-                            : null,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            LandingHero(
+                              username: _currentUser.isAuthenticated
+                                  ? (_currentUser.name.isNotEmpty
+                                      ? _currentUser.name
+                                      : _currentUser.username)
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                            // Suggestion chips
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  _buildSuggestionChip('অসমৰ ইতিহাস কওক', 'অসমৰ প্ৰাচীন আৰু মধ্যযুগীয় ইতিহাসৰ বিষয়ে চমুকৈ বুজাই দিয়া।'),
+                                  _buildSuggestionChip('Generate Study Notes', 'Create comprehensive exam study notes on Photosynthesis and plant biology.'),
+                                  _buildSuggestionChip('Web Search: Assam News', 'Find the latest news and technology updates in Assam today.'),
+                                  _buildSuggestionChip('Explain Quantum Computing', 'Explain quantum computing in simple terms with analogies.'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -374,7 +439,6 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (index < messages.length) {
                           return MessageBubble(message: messages[index]);
                         } else if (_streamingText != null) {
-                          // Live streaming bubble
                           return MessageBubble(
                             message: ChatMessage(
                               id: 'streaming',
@@ -385,7 +449,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             isStreaming: true,
                           );
                         } else {
-                          // Typing dots loader
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 16),
@@ -450,12 +513,43 @@ class _ChatScreenState extends State<ChatScreen> {
               controller: _inputController,
               isLoading: _isLoading,
               webSearch: _webSearch,
+              isAssameseTranslit: _isAssameseTranslit,
               bottomPadding: 92,
               onToggleWebSearch: () {
                 setState(() => _webSearch = !_webSearch);
               },
+              onToggleTranslit: () {
+                setState(() => _isAssameseTranslit = !_isAssameseTranslit);
+              },
+              onPickAttachment: _handlePickAttachment,
               onOpenTools: _openToolsSheet,
-              onSend: _handleSendMessage,
+              onSend: () => _handleSendMessage(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionChip(String label, String prompt) {
+    return InkWell(
+      onTap: () => _handleSendMessage(prompt),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.bgSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.glassBorder),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bolt_rounded, size: 14, color: AppTheme.accentPurple),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
         ),

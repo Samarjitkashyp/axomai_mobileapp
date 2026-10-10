@@ -6,6 +6,7 @@ class AppTheme {
   static const Color bgMain = Color(0xFF06060B);
   static const Color bgSidebar = Color(0xFF090A14);
   static const Color bgCard = Color(0xFF0E101F);
+  static const Color bgSurface = Color(0xFF0E101F);
   static const Color bgCardHover = Color(0xFF13162B);
   static const Color bgInput = Color(0xFF0E101F);
   static const Color bgPill = Color(0xFF121528);
@@ -28,6 +29,7 @@ class AppTheme {
 
   // Borders
   static const Color borderColor = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
+  static const Color glassBorder = Color(0x14FFFFFF);
   static const Color borderFocus = Color(0x80C084FC);
   static const Color borderGlow = Color(0x4DC084FC);
 
@@ -116,7 +118,7 @@ class AppTheme {
       drawerTheme: const DrawerThemeData(
         backgroundColor: Colors.white,
       ),
-      dividerColor: const Color(0x14000000),
+      dividerColor: const Color(0xFFE2E8F0),
     );
   }
 }
