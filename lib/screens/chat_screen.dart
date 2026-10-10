@@ -514,7 +514,7 @@ class _ChatScreenState extends State<ChatScreen> {
               isLoading: _isLoading,
               webSearch: _webSearch,
               isAssameseTranslit: _isAssameseTranslit,
-              bottomPadding: 92,
+              bottomPadding: 8,
               onToggleWebSearch: () {
                 setState(() => _webSearch = !_webSearch);
               },

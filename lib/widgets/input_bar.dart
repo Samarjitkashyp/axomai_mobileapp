@@ -34,7 +34,7 @@ class InputBar extends StatelessWidget {
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final effectiveBottom = isKeyboardOpen
         ? (safeBottom + 8)
-        : ((bottomPadding ?? 92) + safeBottom);
+        : ((bottomPadding ?? 8) + safeBottom);
 
     return Container(
       padding: EdgeInsets.only(
