@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-import 'tools/ai_notes_generator_screen.dart';
-import 'tools/background_remover_screen.dart';
-import 'tools/diagram_generator_screen.dart';
-import 'tools/file_converter_screen.dart';
-import 'tools/image_generator_screen.dart';
-import 'tools/meme_generator_screen.dart';
-import 'tools/qr_generator_screen.dart';
-import 'tools/screenshot_to_code_screen.dart';
-import 'tools/stock_media_screen.dart';
-import 'tools/summarizer_screen.dart';
-import 'tools/video_tools_screen.dart';
+import '../theme/app_theme.dart';
+
+// Import dedicated screens for all 15 tools
 import 'tools/word_to_pdf_screen.dart';
+import 'tools/pdf_to_word_screen.dart';
+import 'tools/img_to_pdf_screen.dart';
+import 'tools/pdf_to_jpg_screen.dart';
+import 'tools/pdf_to_png_screen.dart';
+import 'tools/image_format_converter_screen.dart';
+import 'tools/excel_to_pdf_screen.dart';
+import 'tools/merge_pdf_screen.dart';
+import 'tools/compress_pdf_screen.dart';
+import 'tools/compress_video_screen.dart';
+import 'tools/youtube_video_download_screen.dart';
+import 'tools/video_download_screen.dart';
+import 'tools/image_compress_screen.dart';
+import 'tools/background_remover_screen.dart';
+import 'tools/ai_notes_generator_screen.dart';
 
 class ToolCardData {
   final String id;
@@ -53,186 +58,161 @@ class _ToolsHubScreenState extends State<ToolsHubScreen> {
     ToolCardData(
       id: 'ai-notes',
       title: 'AI Notes Generator',
-      category: 'AI Study & Notes',
-      description: 'Upload textbooks, PDFs or topics to synthesize exam-ready notes, flashcards, MCQs, and mindmaps.',
+      category: 'AI Tools',
+      description: 'Synthesize chapter-wise study notes, formulas, flashcards, MCQs, and mind maps from documents.',
       icon: Icons.auto_stories_rounded,
       accentColor: AppTheme.accentPurple,
-      badge: 'FEATURED ⭐',
+      badge: 'POPULAR ⭐',
       screenBuilder: () => const AiNotesGeneratorScreen(),
     ),
     ToolCardData(
-      id: 'ai-diagram',
-      title: 'AI Diagram Generator',
-      category: 'AI Study & Notes',
-      description: 'Generate flowcharts, sequence diagrams, mind maps, and system architectures from text prompts.',
-      icon: Icons.account_tree_rounded,
+      id: 'background-remover',
+      title: 'Background Remover',
+      category: 'AI Tools',
+      description: 'Remove background from portraits, products, and graphics with high-precision AI edge cutout.',
+      icon: Icons.photo_filter_rounded,
       accentColor: AppTheme.accentCyan,
-      badge: 'AI',
-      screenBuilder: () => const DiagramGeneratorScreen(),
-    ),
-    ToolCardData(
-      id: 'screenshot2code',
-      title: 'Screenshot to Code',
-      category: 'AI Study & Notes',
-      description: 'Upload any app or website UI screenshot and extract clean HTML/Tailwind/Flutter code.',
-      icon: Icons.code_rounded,
-      accentColor: Colors.indigoAccent,
-      badge: 'PRO',
-      screenBuilder: () => const ScreenshotToCodeScreen(),
-    ),
-    ToolCardData(
-      id: 'summarizer',
-      title: 'AI Text Summarizer',
-      category: 'AI Study & Notes',
-      description: 'Condense long articles, essays, and news reports into structured Assamese & English bullet points.',
-      icon: Icons.short_text_rounded,
-      accentColor: AppTheme.accentBlue,
-      screenBuilder: () => const SummarizerScreen(),
+      badge: 'AI ENGINE',
+      screenBuilder: () => const BackgroundRemoverScreen(),
     ),
 
     // ─── 2. Document & PDF Suite ─────────────────────────────────────
     ToolCardData(
-      id: 'word2pdf',
+      id: 'word-to-pdf',
       title: 'Word to PDF',
-      category: 'Document & PDF',
-      description: 'Convert .docx, .doc, and .txt files to formatted PDF documents with high fidelity.',
+      category: 'PDF & Docs',
+      description: 'Convert .docx, .doc, .rtf, and .txt files to high-fidelity PDF documents.',
       icon: Icons.picture_as_pdf_rounded,
       accentColor: AppTheme.accentPurple,
-      badge: 'POPULAR',
+      badge: 'FAST',
       screenBuilder: () => const WordToPdfScreen(),
     ),
     ToolCardData(
-      id: 'pdf2word',
+      id: 'pdf-to-word',
       title: 'PDF to Word',
-      category: 'Document & PDF',
-      description: 'Convert .pdf files back to fully editable Microsoft Word .docx documents.',
+      category: 'PDF & Docs',
+      description: 'Extract and convert PDF documents into fully editable Microsoft Word (.docx) files.',
       icon: Icons.description_rounded,
       accentColor: AppTheme.accentBlue,
-      screenBuilder: () => const FileConverterScreen(initialTarget: 'pdf2word'),
+      badge: 'EDITABLE',
+      screenBuilder: () => const PdfToWordScreen(),
     ),
     ToolCardData(
-      id: 'img2pdf',
-      title: 'Image to PDF',
-      category: 'Document & PDF',
-      description: 'Convert JPG, PNG, WebP images into a single clean printable PDF document.',
+      id: 'img-to-pdf',
+      title: 'Img to PDF',
+      category: 'PDF & Docs',
+      description: 'Combine multiple JPG, PNG, and WebP images into a single organized PDF album.',
       icon: Icons.photo_library_rounded,
-      accentColor: AppTheme.accentCyan,
-      screenBuilder: () => const FileConverterScreen(initialTarget: 'img2pdf'),
+      accentColor: AppTheme.accentEmerald,
+      screenBuilder: () => const ImgToPdfScreen(),
     ),
     ToolCardData(
-      id: 'pdf2img',
-      title: 'PDF to JPG/PNG',
-      category: 'Document & PDF',
-      description: 'Extract high-resolution image pages from any PDF document.',
+      id: 'pdf-to-jpg',
+      title: 'PDF to JPG',
+      category: 'PDF & Docs',
+      description: 'Extract PDF pages as high-resolution JPG images or download as a bundled ZIP.',
       icon: Icons.image_rounded,
       accentColor: Colors.amber,
-      screenBuilder: () => const FileConverterScreen(initialTarget: 'pdf2jpg'),
+      screenBuilder: () => const PdfToJpgScreen(),
     ),
     ToolCardData(
-      id: 'excel2pdf',
+      id: 'pdf-to-png',
+      title: 'PDF to PNG',
+      category: 'PDF & Docs',
+      description: 'Convert PDF pages into lossless PNG graphic images with transparency support.',
+      icon: Icons.collections_rounded,
+      accentColor: AppTheme.accentPink,
+      screenBuilder: () => const PdfToPngScreen(),
+    ),
+    ToolCardData(
+      id: 'excel-to-pdf',
       title: 'Excel to PDF',
-      category: 'Document & PDF',
-      description: 'Convert .xlsx, .xls spreadsheets and tables directly to PDF format.',
+      category: 'PDF & Docs',
+      description: 'Convert .xlsx, .xls spreadsheets and CSV workbooks into clean printable PDF reports.',
       icon: Icons.table_chart_rounded,
       accentColor: AppTheme.successGreen,
-      screenBuilder: () => const FileConverterScreen(initialTarget: 'excel2pdf'),
+      screenBuilder: () => const ExcelToPdfScreen(),
     ),
     ToolCardData(
-      id: 'ppt2pdf',
-      title: 'PPT to PDF',
-      category: 'Document & PDF',
-      description: 'Convert .pptx, .ppt slide presentations into vector PDF documents.',
-      icon: Icons.slideshow_rounded,
-      accentColor: AppTheme.accentPink,
-      screenBuilder: () => const FileConverterScreen(initialTarget: 'ppt2pdf'),
-    ),
-
-    // ─── 3. Creative & Design Suite ──────────────────────────────────
-    ToolCardData(
-      id: 'imggen',
-      title: 'AI Image Generator',
-      category: 'Creative Suite',
-      description: 'Generate Assam-inspired art, cultural landscapes, and photorealistic imagery from prompts.',
-      icon: Icons.image_rounded,
-      accentColor: AppTheme.accentPink,
-      badge: 'AI',
-      screenBuilder: () => const ImageGeneratorScreen(),
-    ),
-    ToolCardData(
-      id: 'bgremover',
-      title: 'Background Remover',
-      category: 'Creative Suite',
-      description: 'Remove photo backgrounds instantly with AI edge detection for portraits & products.',
-      icon: Icons.layers_clear_rounded,
-      accentColor: AppTheme.accentCyan,
-      badge: 'NEW',
-      screenBuilder: () => const BackgroundRemoverScreen(),
-    ),
-    ToolCardData(
-      id: 'stockphotos',
-      title: 'Stock Image Finder',
-      category: 'Creative Suite',
-      description: 'Search and download millions of royalty-free, high-resolution stock photos.',
-      icon: Icons.search_rounded,
-      accentColor: Colors.tealAccent,
-      screenBuilder: () => const StockMediaScreen(isVideoMode: false),
-    ),
-    ToolCardData(
-      id: 'stockvideos',
-      title: 'Stock Video Finder',
-      category: 'Creative Suite',
-      description: 'Search 4K & HD royalty-free stock video footage and b-rolls.',
-      icon: Icons.videocam_rounded,
-      accentColor: Colors.deepOrangeAccent,
-      screenBuilder: () => const StockMediaScreen(isVideoMode: true),
-    ),
-    ToolCardData(
-      id: 'memegen',
-      title: 'Meme Generator',
-      category: 'Creative Suite',
-      description: 'Craft viral trending memes with popular templates and custom top/bottom text.',
-      icon: Icons.mood_rounded,
-      accentColor: Colors.amber,
-      screenBuilder: () => const MemeGeneratorScreen(),
-    ),
-
-    // ─── 4. Media & Utilities ────────────────────────────────────────
-    ToolCardData(
-      id: 'videocompress',
-      title: 'Video Compressor',
-      category: 'Media & Utilities',
-      description: 'Compress large MP4 and MOV videos by up to 80% on cloud FFmpeg servers without quality loss.',
-      icon: Icons.video_file_rounded,
+      id: 'merge-pdf',
+      title: 'Merge PDF',
+      category: 'PDF & Docs',
+      description: 'Combine 2 or more PDF documents into a single unified file in your chosen order.',
+      icon: Icons.call_merge_rounded,
       accentColor: AppTheme.accentPurple,
-      badge: 'GPU',
-      screenBuilder: () => const VideoToolsScreen(initialIsDownloader: false),
+      badge: 'MULTI',
+      screenBuilder: () => const MergePdfScreen(),
     ),
     ToolCardData(
-      id: 'videodownload',
-      title: 'Video Downloader',
-      category: 'Media & Utilities',
-      description: 'Download public videos in high resolution from YouTube, Reels, and direct media URLs.',
-      icon: Icons.download_for_offline_rounded,
+      id: 'compress-pdf',
+      title: 'Compress PDF',
+      category: 'PDF & Docs',
+      description: 'Optimize and reduce PDF document file size with customizable compression levels.',
+      icon: Icons.compress_rounded,
+      accentColor: AppTheme.accentBlue,
+      badge: 'OPTIMIZE',
+      screenBuilder: () => const CompressPdfScreen(),
+    ),
+
+    // ─── 3. Images & Media ───────────────────────────────────────────
+    ToolCardData(
+      id: 'image-format-converter',
+      title: 'Image Format Converter',
+      category: 'Images',
+      description: 'Convert images between PNG, JPG, WEBP, SVG, BMP, and TIFF with instant preview.',
+      icon: Icons.transform_rounded,
       accentColor: AppTheme.accentCyan,
-      screenBuilder: () => const VideoToolsScreen(initialIsDownloader: true),
+      screenBuilder: () => const ImageFormatConverterScreen(),
     ),
     ToolCardData(
-      id: 'qrgen',
-      title: 'QR Code Generator',
-      category: 'Media & Utilities',
-      description: 'Create high-resolution branded QR codes for URLs, Wi-Fi, and contact cards.',
-      icon: Icons.qr_code_2_rounded,
-      accentColor: AppTheme.successGreen,
-      screenBuilder: () => const QrGeneratorScreen(),
+      id: 'image-compress',
+      title: 'Image Compress',
+      category: 'Images',
+      description: 'Reduce image file size up to 85% with interactive quality slider and live calculation.',
+      icon: Icons.photo_size_select_small_rounded,
+      accentColor: Colors.amber,
+      badge: '85% SAVINGS',
+      screenBuilder: () => const ImageCompressScreen(),
+    ),
+
+    // ─── 4. Video Tools ─────────────────────────────────────────────
+    ToolCardData(
+      id: 'compress-video',
+      title: 'Compress Video',
+      category: 'Video',
+      description: 'Shrink large MP4, MOV, and MKV videos with background FFmpeg encoding.',
+      icon: Icons.video_settings_rounded,
+      accentColor: AppTheme.accentPink,
+      badge: 'FFMPEG',
+      screenBuilder: () => const CompressVideoScreen(),
+    ),
+    ToolCardData(
+      id: 'youtube-video-download',
+      title: 'YouTube Video Download',
+      category: 'Video',
+      description: 'Download YouTube videos, Shorts, and high-bitrate MP3 audio tracks directly.',
+      icon: Icons.play_circle_filled_rounded,
+      accentColor: Colors.red,
+      badge: 'HOT 🔥',
+      screenBuilder: () => const YoutubeVideoDownloadScreen(),
+    ),
+    ToolCardData(
+      id: 'video-download',
+      title: 'Video Download',
+      category: 'Video',
+      description: 'Universal online video saver for Instagram Reels, Twitter/X, FB, and direct MP4 URLs.',
+      icon: Icons.cloud_download_rounded,
+      accentColor: AppTheme.accentCyan,
+      screenBuilder: () => const VideoDownloadScreen(),
     ),
   ];
 
   static const List<String> _categories = [
     'All',
-    'AI Study & Notes',
-    'Document & PDF',
-    'Creative Suite',
-    'Media & Utilities',
+    'PDF & Docs',
+    'Images',
+    'Video',
+    'AI Tools',
   ];
 
   @override
@@ -241,231 +221,411 @@ class _ToolsHubScreenState extends State<ToolsHubScreen> {
     super.dispose();
   }
 
+  List<ToolCardData> get _filteredTools {
+    return _tools.where((tool) {
+      final matchesCategory = _selectedCategory == 'All' || tool.category == _selectedCategory;
+      final matchesQuery = _searchQuery.isEmpty ||
+          tool.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          tool.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesQuery;
+    }).toList();
+  }
+
+  void _openTool(ToolCardData tool) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => tool.screenBuilder()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filteredTools = _tools.where((tool) {
-      final matchCat =
-          _selectedCategory == 'All' || tool.category == _selectedCategory;
-      final q = _searchQuery.trim().toLowerCase();
-      final matchSearch = q.isEmpty ||
-          tool.title.toLowerCase().contains(q) ||
-          tool.description.toLowerCase().contains(q) ||
-          tool.category.toLowerCase().contains(q);
-      return matchCat && matchSearch;
-    }).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgCol = isDark ? AppTheme.bgDark : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? AppTheme.bgCard : Colors.white;
+    final borderCol = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+    final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
+    final textSecondary = isDark ? AppTheme.textSecondary : const Color(0xFF64748B);
+
+    final filtered = _filteredTools;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgMain,
+      backgroundColor: bgCol,
       appBar: AppBar(
-        backgroundColor: AppTheme.bgMain,
+        backgroundColor: cardBg,
         elevation: 0,
-        automaticallyImplyLeading: !widget.isRootTab,
         leading: widget.isRootTab
             ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: AppTheme.textPrimary, size: 20),
+                icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
                 onPressed: () => Navigator.pop(context),
               ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppTheme.accentPurple.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.dashboard_customize_rounded,
-                  color: AppTheme.accentPurple, size: 18),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Axom AI Tools Hub',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        title: Text(
+          'Axom AI Tools Hub',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: borderCol, height: 1),
         ),
       ),
-      body: Column(
-        children: [
-          // Search & Filters Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            color: AppTheme.bgSurface,
-            child: Column(
-              children: [
-                // Search Input
-                TextField(
+      body: CustomScrollView(
+        slivers: [
+          // ─── Header & Hero Banner ──────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]
+                        : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderCol),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.accentPurple.withValues(alpha: isDark ? 0.15 : 0.08),
+                      blurRadius: 18,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentPurple.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppTheme.accentPurple.withValues(alpha: 0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.bolt_rounded, color: AppTheme.accentPurple, size: 14),
+                              SizedBox(width: 4),
+                              Text(
+                                '15 SOVEREIGN UTILITIES',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentPurple,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'AI & Document Power Tools',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Fast, secure, and sovereign tools for PDF conversions, media compression, and AI study notes.',
+                      style: TextStyle(fontSize: 13, color: textSecondary, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ─── Real-Time Ajax Search Bar ──────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _searchQuery.isNotEmpty ? AppTheme.accentPurple : borderCol,
+                    width: _searchQuery.isNotEmpty ? 1.5 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
                   controller: _searchController,
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                  style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+                  onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                  style: TextStyle(color: textPrimary, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search 31+ AI tools, PDF converters, and utilities...',
-                    hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 20),
+                    hintText: 'Search 15 tools (e.g., pdf, word, youtube, compress)...',
+                    hintStyle: TextStyle(color: textSecondary, fontSize: 13.5),
+                    prefixIcon: Icon(Icons.search_rounded, color: _searchQuery.isNotEmpty ? AppTheme.accentPurple : textSecondary, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, size: 18, color: AppTheme.textSecondary),
+                            icon: Icon(Icons.clear_rounded, color: textSecondary, size: 18),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = '');
                             },
                           )
                         : null,
-                    filled: true,
-                    fillColor: AppTheme.bgMain,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // Category Chips
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _categories.map((cat) {
-                      final isSelected = _selectedCategory == cat;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(cat),
-                          selected: isSelected,
-                          selectedColor: AppTheme.accentPurple,
-                          backgroundColor: AppTheme.bgMain,
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textSecondary,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
-                          ),
-                          onSelected: (_) => setState(() => _selectedCategory = cat),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
 
-          // Tools Grid
-          Expanded(
-            child: filteredTools.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off_rounded, size: 48, color: AppTheme.textSecondary.withOpacity(0.5)),
-                        const SizedBox(height: 12),
-                        Text('No tools matching "$_searchQuery"', style: const TextStyle(color: AppTheme.textSecondary)),
-                      ],
-                    ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.88,
-                    ),
-                    itemCount: filteredTools.length,
-                    itemBuilder: (context, idx) {
-                      final tool = filteredTools[idx];
-                      return _buildToolCard(tool);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
+          // ─── Category Filter Chips ──────────────────────────────────
+          SliverToBoxAdapter(
+            child: Container(
+              height: 44,
+              margin: const EdgeInsets.only(top: 8, bottom: 12),
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: _categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (ctx, i) {
+                  final cat = _categories[i];
+                  final isSelected = _selectedCategory == cat;
+                  final count = cat == 'All'
+                      ? _tools.length
+                      : _tools.where((t) => t.category == cat).length;
 
-  Widget _buildToolCard(ToolCardData tool) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => tool.screenBuilder()),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppTheme.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.glassBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: tool.accentColor.withOpacity(0.15),
+                  return InkWell(
+                    onTap: () => setState(() => _selectedCategory = cat),
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(tool.icon, color: tool.accentColor, size: 22),
-                ),
-                if (tool.badge.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: tool.accentColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: tool.accentColor.withOpacity(0.4)),
-                    ),
-                    child: Text(
-                      tool.badge,
-                      style: TextStyle(
-                        color: tool.accentColor,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.accentPurple
+                            : (isDark ? AppTheme.bgCard : Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? AppTheme.accentPurple : borderCol,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected ? Colors.white : textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.25)
+                                  : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$count',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.white : textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              tool.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              tool.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 11,
-                height: 1.3,
+          ),
+
+          // ─── Tool Cards List / Grid ─────────────────────────────────
+          if (filtered.isEmpty) ...[
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off_rounded, size: 56, color: textSecondary.withValues(alpha: 0.5)),
+                      const SizedBox(height: 14),
+                      Text(
+                        'No tools found for "$_searchQuery"',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Try searching with a different keyword or reset filters.',
+                        style: TextStyle(fontSize: 12.5, color: textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                            _selectedCategory = 'All';
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.accentPurple,
+                          side: const BorderSide(color: AppTheme.accentPurple),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Reset Search & Filters'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, index) {
+                    final tool = filtered[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderCol),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: () => _openTool(tool),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Icon Pill Container
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: tool.accentColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: tool.accentColor.withValues(alpha: 0.25),
+                                  ),
+                                ),
+                                child: Icon(tool.icon, color: tool.accentColor, size: 24),
+                              ),
+                              const SizedBox(width: 14),
+
+                              // Text details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            tool.title,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        if (tool.badge.isNotEmpty) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: tool.accentColor.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: tool.accentColor.withValues(alpha: 0.4)),
+                                            ),
+                                            child: Text(
+                                              tool.badge,
+                                              style: TextStyle(
+                                                fontSize: 9.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: tool.accentColor,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      tool.description,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: textSecondary,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+
+                              // Chevron Action Arrow
+                              Container(
+                                margin: const EdgeInsets.only(top: 10),
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 13,
+                                  color: textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: filtered.length,
+                ),
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

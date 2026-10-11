@@ -24,8 +24,17 @@ class RightDrawer extends StatefulWidget {
 class _RightDrawerState extends State<RightDrawer> {
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgSidebar = isDark ? AppTheme.bgSidebar : Colors.white;
+    final bgCard = isDark ? AppTheme.bgCard : const Color(0xFFF8FAFC);
+    final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
+    final textSecondary = isDark ? AppTheme.textSecondary : const Color(0xFF475569);
+    final textMuted = isDark ? AppTheme.textMuted : const Color(0xFF94A3B8);
+    final bgPill = isDark ? AppTheme.bgPill : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+
     return Drawer(
-      backgroundColor: AppTheme.bgSidebar,
+      backgroundColor: bgSidebar,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -36,17 +45,17 @@ class _RightDrawerState extends State<RightDrawer> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Plan & Usage',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: textPrimary,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppTheme.textSecondary, size: 20),
+                    icon: Icon(Icons.close_rounded,
+                        color: textSecondary, size: 20),
                     onPressed: widget.onClose,
                   ),
                 ],
@@ -64,9 +73,9 @@ class _RightDrawerState extends State<RightDrawer> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.bgCard,
+                      color: bgCard,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.borderColor),
+                      border: Border.all(color: borderColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,10 +94,10 @@ class _RightDrawerState extends State<RightDrawer> {
                                             ? activeUser.name
                                             : activeUser.username)
                                         : 'Free Guest Tier',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
-                                      color: AppTheme.textPrimary,
+                                      color: textPrimary,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -100,7 +109,7 @@ class _RightDrawerState extends State<RightDrawer> {
                                         : 'Guest Mode',
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: AppTheme.accentPink,
+                                      color: AppTheme.accentAmber,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -132,9 +141,9 @@ class _RightDrawerState extends State<RightDrawer> {
                           activeUser.isAuthenticated
                               ? 'Synced with your Axom AI account. Access to Axom 2.0 Pro model rotation.'
                               : 'Sign in with your account to unlock full history sync & models.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textMuted,
+                            color: textMuted,
                             height: 1.4,
                           ),
                         ),
@@ -142,12 +151,12 @@ class _RightDrawerState extends State<RightDrawer> {
                           const SizedBox(height: 12),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.bgPill,
-                              foregroundColor: AppTheme.accentPurple,
+                              backgroundColor: bgPill,
+                              foregroundColor: AppTheme.accentEmerald,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                side: const BorderSide(
-                                    color: AppTheme.borderColor),
+                                side: BorderSide(
+                                    color: borderColor),
                               ),
                               minimumSize: const Size.fromHeight(36),
                             ),
@@ -177,14 +186,14 @@ class _RightDrawerState extends State<RightDrawer> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgCard,
+                  color: bgCard,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.borderColor),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
@@ -192,10 +201,10 @@ class _RightDrawerState extends State<RightDrawer> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: textPrimary,
                           ),
                         ),
-                        Text(
+                        const Text(
                           'Active',
                           style: TextStyle(
                             fontSize: 12,
@@ -208,20 +217,20 @@ class _RightDrawerState extends State<RightDrawer> {
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: const LinearProgressIndicator(
+                      child: LinearProgressIndicator(
                         value: 0.35,
                         minHeight: 6,
-                        backgroundColor: AppTheme.bgPill,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.accentPurple),
+                        backgroundColor: bgPill,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.accentEmerald),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       '3,500 / 10,000 words used today',
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: AppTheme.textSecondary,
+                        color: textSecondary,
                       ),
                     ),
                   ],
@@ -235,10 +244,16 @@ class _RightDrawerState extends State<RightDrawer> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: AppTheme.glowGradient,
+                  gradient: isDark
+                      ? AppTheme.glowGradient
+                      : const LinearGradient(
+                          colors: [Color(0xFF065F46), Color(0xFF047857)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppTheme.accentPurple.withValues(alpha: 0.3),
+                    color: AppTheme.accentEmerald.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(
@@ -257,14 +272,14 @@ class _RightDrawerState extends State<RightDrawer> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: AppTheme.textSecondary,
+                        color: Color(0xFFD1FAE5),
                       ),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF090A14),
+                        foregroundColor: const Color(0xFF065F46),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

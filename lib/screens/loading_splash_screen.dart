@@ -68,8 +68,8 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen>
   }
 
   void _startLoadingSequence() {
-    // Cycle through status messages
-    _statusTimer = Timer.periodic(const Duration(milliseconds: 450), (timer) {
+    // Cycle through status messages swiftly
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
       if (!mounted) return;
       if (_statusStep < _statusMessages.length - 1) {
         setState(() {
@@ -79,10 +79,10 @@ class _LoadingSplashScreenState extends State<LoadingSplashScreen>
       }
     });
 
-    // Run auth sync & allow minimum animation duration
+    // Run auth sync swiftly without freezing the user
     Future.wait([
       AuthService.syncUserStatus(),
-      Future.delayed(const Duration(milliseconds: 1900)),
+      Future.delayed(const Duration(milliseconds: 450)),
     ]).then((_) {
       if (!mounted) return;
       _proceedToApp();

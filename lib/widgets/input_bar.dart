@@ -30,11 +30,22 @@ class InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final safeBottom = MediaQuery.of(context).padding.bottom;
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
     final effectiveBottom = isKeyboardOpen
         ? (safeBottom + 8)
         : ((bottomPadding ?? 8) + safeBottom);
+
+    final barBg = isDark ? AppTheme.bgMain : Colors.white;
+    final barBorder = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+    final cardBg = isDark ? AppTheme.bgInput : const Color(0xFFF8FAFC);
+    final cardBorder = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+    final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
+    final textSecondary = isDark ? AppTheme.textSecondary : const Color(0xFF475569);
+    final textMuted = isDark ? AppTheme.textMuted : const Color(0xFF94A3B8);
+    final pillBg = isDark ? AppTheme.bgPill : const Color(0xFFF1F5F9);
+    final pillBorder = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
 
     return Container(
       padding: EdgeInsets.only(
@@ -44,9 +55,9 @@ class InputBar extends StatelessWidget {
         bottom: effectiveBottom,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.bgMain.withValues(alpha: 0.95),
-        border: const Border(
-          top: BorderSide(color: AppTheme.borderColor, width: 0.5),
+        color: barBg.withValues(alpha: 0.95),
+        border: Border(
+          top: BorderSide(color: barBorder, width: 0.5),
         ),
       ),
       child: Column(
@@ -55,19 +66,19 @@ class InputBar extends StatelessWidget {
           // Input Card Container
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.bgInput,
+              color: cardBg,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isAssameseTranslit
-                    ? AppTheme.accentPurple.withOpacity(0.5)
-                    : AppTheme.borderColor,
+                    ? AppTheme.accentEmerald.withOpacity(0.5)
+                    : cardBorder,
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 15,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -80,8 +91,8 @@ class InputBar extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.add_photo_alternate_rounded,
-                          color: AppTheme.textSecondary, size: 21),
+                      icon: Icon(Icons.add_photo_alternate_rounded,
+                          color: textSecondary, size: 21),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: onPickAttachment,
@@ -99,16 +110,16 @@ class InputBar extends StatelessWidget {
                           maxLines: 4,
                           minLines: 1,
                           textInputAction: TextInputAction.newline,
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
+                          style: TextStyle(
+                            color: textPrimary,
                             fontSize: 14.5,
                           ),
                           decoration: InputDecoration(
                             hintText: isAssameseTranslit
                                 ? 'অসমীয়াত লিখক (e.g. axom)...'
                                 : 'Message Axom AI...',
-                            hintStyle: const TextStyle(
-                              color: AppTheme.textMuted,
+                            hintStyle: TextStyle(
+                              color: textMuted,
                               fontSize: 14.5,
                             ),
                             border: InputBorder.none,
@@ -140,13 +151,13 @@ class InputBar extends StatelessWidget {
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: isAssameseTranslit
-                                  ? AppTheme.accentPurple.withOpacity(0.2)
-                                  : AppTheme.bgPill,
+                                  ? AppTheme.accentEmerald.withOpacity(0.2)
+                                  : pillBg,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isAssameseTranslit
-                                    ? AppTheme.accentPurple.withOpacity(0.6)
-                                    : AppTheme.borderColor,
+                                    ? AppTheme.accentEmerald.withOpacity(0.6)
+                                    : pillBorder,
                               ),
                             ),
                             child: Row(
@@ -157,8 +168,8 @@ class InputBar extends StatelessWidget {
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: isAssameseTranslit
-                                        ? AppTheme.accentPurple
-                                        : AppTheme.textSecondary,
+                                        ? AppTheme.accentEmerald
+                                        : textSecondary,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
@@ -168,8 +179,8 @@ class InputBar extends StatelessWidget {
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,
                                     color: isAssameseTranslit
-                                        ? AppTheme.accentPurple
-                                        : AppTheme.textSecondary,
+                                        ? AppTheme.accentEmerald
+                                        : textSecondary,
                                   ),
                                 ),
                               ],
@@ -189,12 +200,12 @@ class InputBar extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: webSearch
                                   ? AppTheme.accentCyan.withValues(alpha: 0.15)
-                                  : AppTheme.bgPill,
+                                  : pillBg,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: webSearch
                                     ? AppTheme.accentCyan.withValues(alpha: 0.5)
-                                    : AppTheme.borderColor,
+                                    : pillBorder,
                               ),
                             ),
                             child: Row(
@@ -204,7 +215,7 @@ class InputBar extends StatelessWidget {
                                   size: 11,
                                   color: webSearch
                                       ? AppTheme.accentCyan
-                                      : AppTheme.textSecondary,
+                                      : textSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -214,7 +225,7 @@ class InputBar extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                     color: webSearch
                                         ? AppTheme.accentCyan
-                                        : AppTheme.textSecondary,
+                                        : textSecondary,
                                   ),
                                 ),
                               ],
@@ -231,24 +242,24 @@ class InputBar extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppTheme.bgPill,
+                              color: pillBg,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppTheme.borderColor),
+                              border: Border.all(color: pillBorder),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
                                 Icon(
                                   Icons.dashboard_customize_rounded,
                                   size: 11,
-                                  color: AppTheme.textSecondary,
+                                  color: textSecondary,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   '31+ Tools',
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,
-                                    color: AppTheme.textSecondary,
+                                    color: textSecondary,
                                   ),
                                 ),
                               ],

@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/glowing_orb.dart';
 import 'loading_splash_screen.dart';
 import 'login_screen.dart';
+import 'main_navigation_screen.dart';
 
 class AuthGateScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -59,10 +60,9 @@ class _AuthGateScreenState extends State<AuthGateScreen> {
       );
     }
 
-    // If user is already authenticated (previously logged in)
+    // If user is already authenticated (previously logged in) -> Instant zero-latency launch
     if (_user != null && _user!.isAuthenticated) {
-      return LoadingSplashScreen(
-        user: _user,
+      return MainNavigationScreen(
         isDarkMode: widget.isDarkMode,
         onToggleTheme: widget.onToggleTheme,
       );

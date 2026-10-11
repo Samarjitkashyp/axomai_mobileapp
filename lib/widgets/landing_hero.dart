@@ -8,6 +8,10 @@ class LandingHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
+    final textMutedColor = isDark ? AppTheme.textSecondary : const Color(0xFF475569);
+
     final hasUser = username != null && username!.trim().isNotEmpty;
     final title = hasUser ? 'Hi, $username!' : "Hi, I'm Axom AI";
 
@@ -25,10 +29,10 @@ class LandingHero extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: textColor,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -41,11 +45,11 @@ class LandingHero extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             // Subtitle
-            const Text(
+            Text(
               'How can I help you today?',
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.textSecondary,
+                color: textMutedColor,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -63,10 +67,10 @@ class LandingHero extends StatelessWidget {
               child: RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
                     height: 1.55,
-                    color: AppTheme.textSecondary,
+                    color: textMutedColor,
                   ),
                   children: [
                     const TextSpan(text: 'Your AI workspace for '),

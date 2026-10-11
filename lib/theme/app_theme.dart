@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Brand Color Palette - 100% Exact Parity with https://chat.aiaxom.co.in/
   static const Color bgMain = Color(0xFF0B1220); // Deep Obsidian Cyber Navy
+  static const Color bgDark = Color(0xFF0B1220);
   static const Color bgSidebar = Color(0xFF090A14); // Deep Night
   static const Color bgCard = Color(0xFF0E101F);
   static const Color bgSurface = Color(0xFF0E101F);
@@ -70,8 +71,11 @@ class AppTheme {
     colors: [Color(0xFF23273A), Color(0xFF1E2235)],
   );
 
-  // Dark Theme
-  static ThemeData get darkTheme {
+  // Cached Themes for 60/120fps ultra-smooth performance
+  static final ThemeData darkTheme = _buildDarkTheme();
+  static final ThemeData lightTheme = _buildLightTheme();
+
+  static ThemeData _buildDarkTheme() {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bgMain,
@@ -107,8 +111,7 @@ class AppTheme {
     );
   }
 
-  // Light Theme
-  static ThemeData get lightTheme {
+  static ThemeData _buildLightTheme() {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),

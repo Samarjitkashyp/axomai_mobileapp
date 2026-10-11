@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -47,6 +48,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _streamingText;
   AuthUser _currentUser = AuthUser.guest();
 
+  Timer? _streamThrottleTimer;
+  String _streamBuffer = '';
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +69,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     AuthService.currentUserNotifier.removeListener(_onAuthChanged);
+    _streamThrottleTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -116,16 +121,30 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottom({bool immediate = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        if (immediate) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        } else {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+          );
+        }
       }
     });
+  }
+
+  void _flushStreamBuffer() {
+    if (_streamBuffer.isNotEmpty && mounted) {
+      setState(() {
+        _streamingText = (_streamingText ?? '') + _streamBuffer;
+        _streamBuffer = '';
+      });
+      _scrollToBottom(immediate: true);
+    }
   }
 
   void _handleNewChat() {
@@ -134,6 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _sessions.insert(0, newSession);
       _activeSessionId = newSession.id;
       _streamingText = null;
+      _streamBuffer = '';
       _isLoading = false;
     });
     _saveState();
@@ -143,6 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _activeSessionId = sessionId;
       _streamingText = null;
+      _streamBuffer = '';
       _isLoading = false;
     });
     _saveState();
@@ -196,6 +217,7 @@ class _ChatScreenState extends State<ChatScreen> {
       session!.messages.add(userMessage);
       _isLoading = true;
       _streamingText = null;
+      _streamBuffer = '';
     });
     _saveState();
     _scrollToBottom();
@@ -206,12 +228,17 @@ class _ChatScreenState extends State<ChatScreen> {
       sessionId: session.id,
       history: session.messages,
       onTokenReceived: (chunk) {
-        setState(() {
-          _streamingText = (_streamingText ?? '') + chunk;
-        });
-        _scrollToBottom();
+        _streamBuffer += chunk;
+        if (_streamThrottleTimer == null || !_streamThrottleTimer!.isActive) {
+          _streamThrottleTimer = Timer(const Duration(milliseconds: 40), () {
+            _flushStreamBuffer();
+          });
+        }
       },
     );
+
+    _streamThrottleTimer?.cancel();
+    _flushStreamBuffer();
 
     if (mounted) {
       setState(() {
@@ -233,6 +260,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
         session!.messages.add(assistantMsg);
         _streamingText = null;
+        _streamBuffer = '';
       });
       _saveState();
       _scrollToBottom();
@@ -358,7 +386,6 @@ class _ChatScreenState extends State<ChatScreen> {
           if (mounted) setState(() => _currentUser = user);
           _scaffoldKey.currentState?.openEndDrawer();
         },
-        onOpenTools: _openToolsSheet,
         onToggleTheme: widget.onToggleTheme,
         isDarkMode: widget.isDarkMode,
       ),
@@ -399,47 +426,57 @@ class _ChatScreenState extends State<ChatScreen> {
               child: isChatEmpty
                   ? Center(
                       child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            LandingHero(
-                              username: _currentUser.isAuthenticated
-                                  ? (_currentUser.name.isNotEmpty
-                                      ? _currentUser.name
-                                      : _currentUser.username)
-                                  : null,
-                            ),
-                            const SizedBox(height: 16),
-                            // Suggestion chips
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  _buildSuggestionChip('অসমৰ ইতিহাস কওক', 'অসমৰ প্ৰাচীন আৰু মধ্যযুগীয় ইতিহাসৰ বিষয়ে চমুকৈ বুজাই দিয়া।'),
-                                  _buildSuggestionChip('Generate Study Notes', 'Create comprehensive exam study notes on Photosynthesis and plant biology.'),
-                                  _buildSuggestionChip('Web Search: Assam News', 'Find the latest news and technology updates in Assam today.'),
-                                  _buildSuggestionChip('Explain Quantum Computing', 'Explain quantum computing in simple terms with analogies.'),
-                                ],
+                        physics: const BouncingScrollPhysics(),
+                        child: RepaintBoundary(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              LandingHero(
+                                username: _currentUser.isAuthenticated
+                                    ? (_currentUser.name.isNotEmpty
+                                        ? _currentUser.name
+                                        : _currentUser.username)
+                                    : null,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+                              // Suggestion chips
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    _buildSuggestionChip('অসমৰ ইতিহাস কওক', 'অসমৰ প্ৰাচীন আৰু মধ্যযুগীয় ইতিহাসৰ বিষয়ে চমুকৈ বুজাই দিয়া।'),
+                                    _buildSuggestionChip('Generate Study Notes', 'Create comprehensive exam study notes on Photosynthesis and plant biology.'),
+                                    _buildSuggestionChip('Web Search: Assam News', 'Find the latest news and technology updates in Assam today.'),
+                                    _buildSuggestionChip('Explain Quantum Computing', 'Explain quantum computing in simple terms with analogies.'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     )
                   : ListView.builder(
                       controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      cacheExtent: 1000,
+                      addRepaintBoundaries: true,
                       padding: const EdgeInsets.only(top: 10, bottom: 20),
                       itemCount: messages.length +
                           (_streamingText != null ? 1 : 0) +
                           (_isLoading && _streamingText == null ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index < messages.length) {
-                          return MessageBubble(message: messages[index]);
+                          return MessageBubble(
+                            key: ValueKey(messages[index].id),
+                            message: messages[index],
+                          );
                         } else if (_streamingText != null) {
                           return MessageBubble(
+                            key: const ValueKey('streaming_msg'),
                             message: ChatMessage(
                               id: 'streaming',
                               role: 'assistant',
@@ -480,10 +517,18 @@ class _ChatScreenState extends State<ChatScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.bgCard,
+                                    color: widget.isDarkMode ? AppTheme.bgCard : Colors.white,
                                     borderRadius: BorderRadius.circular(16),
-                                    border:
-                                        Border.all(color: AppTheme.borderColor),
+                                    border: Border.all(
+                                      color: widget.isDarkMode ? AppTheme.borderColor : const Color(0xFFE2E8F0),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: widget.isDarkMode ? 0.2 : 0.05),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -492,9 +537,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                         _webSearch
                                             ? 'Searching web & synthesizing...'
                                             : 'Axom AI is thinking...',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12.5,
-                                          color: AppTheme.textSecondary,
+                                          color: widget.isDarkMode ? AppTheme.textSecondary : const Color(0xFF475569),
                                         ),
                                       ),
                                     ],
@@ -532,24 +577,35 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildSuggestionChip(String label, String prompt) {
+    final chipBg = widget.isDarkMode ? AppTheme.bgSurface : const Color(0xFFFFFFFF);
+    final chipBorder = widget.isDarkMode ? AppTheme.glassBorder : const Color(0xFFE2E8F0);
+    final chipText = widget.isDarkMode ? AppTheme.textPrimary : const Color(0xFF0F172A);
+
     return InkWell(
       onTap: () => _handleSendMessage(prompt),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: AppTheme.bgSurface,
+          color: chipBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.glassBorder),
+          border: Border.all(color: chipBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: widget.isDarkMode ? 0.15 : 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.bolt_rounded, size: 14, color: AppTheme.accentPurple),
+            const Icon(Icons.bolt_rounded, size: 14, color: AppTheme.accentEmerald),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 12, fontWeight: FontWeight.w500),
+              style: TextStyle(color: chipText, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
         ),

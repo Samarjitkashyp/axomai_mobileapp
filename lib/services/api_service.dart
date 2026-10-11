@@ -542,6 +542,82 @@ class ApiService {
     }
   }
 
+  // ─── 6.1 PDF MANIPULATION & TOOLS ──────────────────────────────────
+  static Future<Map<String, dynamic>> executePdfTool({
+    required String op,
+    required List<PlatformFile> files,
+    String? level,
+    String? angle,
+    String? pages,
+    String? watermarkText,
+  }) async {
+    if (files.isEmpty) {
+      return {'success': false, 'error': 'No PDF file selected.'};
+    }
+
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/pdf-tool/');
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.fields['op'] = op;
+      if (level != null) request.fields['level'] = level;
+      if (angle != null) request.fields['angle'] = angle;
+      if (pages != null) request.fields['pages'] = pages;
+      if (watermarkText != null) request.fields['text'] = watermarkText;
+
+      final sessionCookie = await AuthService.getSessionCookie();
+      if (sessionCookie != null && sessionCookie.isNotEmpty) {
+        request.headers['Cookie'] = sessionCookie;
+      }
+
+      final isBatch = files.length > 1;
+      for (final file in files) {
+        final fieldName = isBatch ? 'files' : 'file';
+        if (file.bytes != null) {
+          request.files.add(http.MultipartFile.fromBytes(
+            fieldName,
+            file.bytes!,
+            filename: file.name,
+          ));
+        } else if (file.path != null) {
+          request.files.add(await http.MultipartFile.fromPath(
+            fieldName,
+            file.path!,
+            filename: file.name,
+          ));
+        }
+      }
+
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 120));
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode == 200) {
+        final data = jsonDecode(responseBody) as Map<String, dynamic>;
+        if (data['success'] == true) {
+          String rawDownload = data['download_url'] ?? '';
+          if (rawDownload.startsWith('/')) {
+            rawDownload = '$baseUrl$rawDownload';
+          }
+          data['download_url'] = rawDownload;
+        }
+        return data;
+      } else {
+        try {
+          return jsonDecode(responseBody) as Map<String, dynamic>;
+        } catch (_) {
+          return {
+            'success': false,
+            'error': 'Server error (${streamedResponse.statusCode})',
+          };
+        }
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Network or PDF error: $e'};
+    }
+  }
+
   // ─── 7. AI DIAGRAM GENERATOR ────────────────────────────────────────
   static Future<Map<String, dynamic>> generateDiagram({
     required String prompt,
@@ -749,6 +825,49 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'url': videoUrl}),
       ).timeout(const Duration(seconds: 30));
+
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ─── 13. ASSAMESE PHONETICS & INDICTTS ──────────────────────────────
+  static Future<Map<String, dynamic>> synthesizeAssameseTTS({
+    required String text,
+    String voice = 'asm_female',
+    double speed = 1.0,
+  }) async {
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/chat/tts/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'text': text,
+          'voice': voice,
+          'speed': speed,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAssamesePhonetics(String text) async {
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/chat/phonetics/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'text': text}),
+      ).timeout(const Duration(seconds: 10));
 
       return jsonDecode(response.body) as Map<String, dynamic>;
     } catch (e) {

@@ -40,13 +40,22 @@ class _LeftDrawerState extends State<LeftDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgSidebar = isDark ? AppTheme.bgSidebar : Colors.white;
+    final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
+    final textSecondary = isDark ? AppTheme.textSecondary : const Color(0xFF475569);
+    final textMuted = isDark ? AppTheme.textMuted : const Color(0xFF94A3B8);
+    final bgPill = isDark ? AppTheme.bgPill : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+    final activePillBg = isDark ? AppTheme.bgPillActive : const Color(0xFFECFDF5);
+
     final filteredSessions = widget.sessions.where((s) {
       if (_searchQuery.isEmpty) return true;
       return s.title.toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
 
     return Drawer(
-      backgroundColor: AppTheme.bgSidebar,
+      backgroundColor: bgSidebar,
       child: SafeArea(
         child: Column(
           children: [
@@ -77,19 +86,19 @@ class _LeftDrawerState extends State<LeftDrawer> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
+                      Text(
                         'Axom AI',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.textPrimary,
+                          color: textPrimary,
                         ),
                       ),
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppTheme.textSecondary, size: 20),
+                    icon: Icon(Icons.close_rounded,
+                        color: textSecondary, size: 20),
                     onPressed: widget.onClose,
                   ),
                 ],
@@ -113,7 +122,7 @@ class _LeftDrawerState extends State<LeftDrawer> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.accentPurple.withValues(alpha: 0.3),
+                        color: AppTheme.accentEmerald.withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -146,32 +155,32 @@ class _LeftDrawerState extends State<LeftDrawer> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
-                  color: AppTheme.bgPill,
+                  color: bgPill,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.borderColor),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded,
-                        size: 16, color: AppTheme.textMuted),
+                    Icon(Icons.search_rounded,
+                        size: 16, color: textMuted),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                         controller: _searchController,
                         onChanged: (val) => setState(() => _searchQuery = val),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.textPrimary,
+                          color: textPrimary,
                         ),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Search chats...',
                           hintStyle: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textMuted,
+                            color: textMuted,
                           ),
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
                     ),
@@ -181,8 +190,8 @@ class _LeftDrawerState extends State<LeftDrawer> {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
                         },
-                        child: const Icon(Icons.clear_rounded,
-                            size: 14, color: AppTheme.textMuted),
+                        child: Icon(Icons.clear_rounded,
+                            size: 14, color: textMuted),
                       ),
                   ],
                 ),
@@ -199,9 +208,9 @@ class _LeftDrawerState extends State<LeftDrawer> {
                         _searchQuery.isEmpty
                             ? 'No chat history yet'
                             : 'No chats match "$_searchQuery"',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.textMuted,
+                          color: textMuted,
                         ),
                       ),
                     )
@@ -218,13 +227,13 @@ class _LeftDrawerState extends State<LeftDrawer> {
                             borderRadius: BorderRadius.circular(10),
                             border: isActive
                                 ? Border.all(
-                                    color: AppTheme.accentPurple
+                                    color: AppTheme.accentEmerald
                                         .withValues(alpha: 0.4))
                                 : null,
                           ),
                           child: Material(
                             color: isActive
-                                ? AppTheme.bgPillActive
+                                ? activePillBg
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             clipBehavior: Clip.antiAlias,
@@ -236,8 +245,8 @@ class _LeftDrawerState extends State<LeftDrawer> {
                                 Icons.chat_bubble_outline_rounded,
                                 size: 16,
                                 color: isActive
-                                    ? AppTheme.accentPurple
-                                    : AppTheme.textSecondary,
+                                    ? AppTheme.accentEmerald
+                                    : textSecondary,
                               ),
                               title: Text(
                                 session.title,
@@ -249,13 +258,13 @@ class _LeftDrawerState extends State<LeftDrawer> {
                                       ? FontWeight.w600
                                       : FontWeight.w400,
                                   color: isActive
-                                      ? AppTheme.textPrimary
-                                      : AppTheme.textSecondary,
+                                      ? (isDark ? AppTheme.textPrimary : AppTheme.accentEmerald)
+                                      : textSecondary,
                                 ),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded,
-                                    size: 16, color: AppTheme.textMuted),
+                                icon: Icon(Icons.delete_outline_rounded,
+                                    size: 16, color: textMuted),
                                 onPressed: () =>
                                     widget.onDeleteSession(session.id),
                               ),
@@ -270,7 +279,7 @@ class _LeftDrawerState extends State<LeftDrawer> {
                     ),
             ),
 
-            const Divider(color: AppTheme.borderColor, height: 1),
+            Divider(color: borderColor, height: 1),
 
             // Bottom Profile / Settings Row matching updated sidebar
             Padding(
@@ -316,11 +325,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
                                               maxLines: 1,
                                               overflow:
                                                   TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 13.5,
                                                 fontWeight: FontWeight.w600,
-                                                color:
-                                                    AppTheme.textPrimary,
+                                                color: textPrimary,
                                               ),
                                             ),
                                             const SizedBox(height: 1),
@@ -332,17 +340,17 @@ class _LeftDrawerState extends State<LeftDrawer> {
                                                       : 'Member'),
                                               style: const TextStyle(
                                                 fontSize: 10.5,
-                                                color: AppTheme.accentPink,
+                                                color: AppTheme.accentAmber,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const Icon(
+                                      Icon(
                                         Icons.settings_outlined,
                                         size: 16,
-                                        color: AppTheme.textMuted,
+                                        color: textMuted,
                                       ),
                                     ],
                                   ),
@@ -351,8 +359,8 @@ class _LeftDrawerState extends State<LeftDrawer> {
                             ),
                             const SizedBox(width: 4),
                             IconButton(
-                              icon: const Icon(Icons.logout_rounded,
-                                  size: 18, color: AppTheme.textSecondary),
+                              icon: Icon(Icons.logout_rounded,
+                                  size: 18, color: textSecondary),
                               onPressed: () {
                                 widget.onLogout();
                                 widget.onClose();
@@ -371,22 +379,22 @@ class _LeftDrawerState extends State<LeftDrawer> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: AppTheme.bgPill,
+                              color: bgPill,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppTheme.borderColor),
+                              border: Border.all(color: borderColor),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.login_rounded,
-                                    size: 16, color: AppTheme.accentPurple),
-                                SizedBox(width: 8),
+                                const Icon(Icons.login_rounded,
+                                    size: 16, color: AppTheme.accentEmerald),
+                                const SizedBox(width: 8),
                                 Text(
                                   'Sign In / Register',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: AppTheme.textPrimary,
+                                    color: textPrimary,
                                   ),
                                 ),
                               ],

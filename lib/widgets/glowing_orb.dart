@@ -33,34 +33,35 @@ class _GlowingOrbState extends State<GlowingOrb>
   Widget build(BuildContext context) {
     final double s = widget.size;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final progress = _controller.value;
-        final pulse = math.sin(progress * 2 * math.pi) * 0.05 + 1.0;
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final progress = _controller.value;
+          final pulse = math.sin(progress * 2 * math.pi) * 0.04 + 1.0;
 
-        return SizedBox(
-          width: s,
-          height: s,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // 1. Soft Aurora Glow behind
-              Container(
-                width: s * 1.1 * pulse,
-                height: s * 1.1 * pulse,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.accentPurple.withValues(alpha: 0.35),
-                      AppTheme.accentPink.withValues(alpha: 0.15),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.55, 1.0],
+          return SizedBox(
+            width: s,
+            height: s,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 1. Soft Aurora Glow behind (optimized radius)
+                Container(
+                  width: s * 1.05 * pulse,
+                  height: s * 1.05 * pulse,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.accentEmerald.withValues(alpha: 0.25),
+                        AppTheme.accentAmber.withValues(alpha: 0.12),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
                   ),
                 ),
-              ),
 
               // 2. Outer Rotating Ring 1
               Transform.rotate(
@@ -175,8 +176,9 @@ class _GlowingOrbState extends State<GlowingOrb>
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildOrbitalParticle({
     required double progress,

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
-import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -23,7 +21,6 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _copied = false;
-  bool _isExporting = false;
   String? _feedback;
 
   void _handleCopy() {
@@ -34,33 +31,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     });
   }
 
-  Future<void> _handleExportDocx() async {
-    setState(() => _isExporting = true);
-    final res = await ApiService.exportChatDocx(
-      title: 'Axom AI Chat Response',
-      messages: [
-        {'role': 'assistant', 'text': widget.message.text}
-      ],
-    );
-
-    if (!mounted) return;
-    setState(() => _isExporting = false);
-
-    if (res['success'] == true && res['download_url'] != null) {
-      final uri = Uri.parse(res['download_url']);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('📄 Exported Word DOCX successfully!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res['error'] ?? 'Export failed.')),
-      );
-    }
-  }
-
   Future<void> _openSourceUrl(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && await canLaunchUrl(uri)) {
@@ -68,13 +38,14 @@ class _MessageBubbleState extends State<MessageBubble> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    if (widget.message.isUser) {
-      return _buildUserBubble();
-    } else {
-      return _buildAssistantBubble();
-    }
+    return RepaintBoundary(
+      child: widget.message.isUser
+          ? _buildUserBubble()
+          : _buildAssistantBubble(),
+    );
   }
 
   Widget _buildUserBubble() {
@@ -99,11 +70,11 @@ class _MessageBubbleState extends State<MessageBubble> {
                   color: Colors.white.withValues(alpha: 0.1),
                   width: 1,
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+                    color: Color(0x33000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -142,6 +113,17 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   Widget _buildAssistantBubble() {
     final msg = widget.message;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final cardBg = isDark ? AppTheme.bgCard : Colors.white;
+    final cardBorder = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
+    final textBodyColor = isDark ? const Color(0xFFECECF1) : const Color(0xFF1E293B);
+    final headingColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final sourceChipBg = isDark ? const Color(0xFF191D30) : const Color(0xFFF1F5F9);
+    final sourceChipBorder = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0);
+    final sourceChipTextColor = isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155);
+    final codeBlockBg = isDark ? const Color(0xFF121422) : const Color(0xFFF8FAFC);
+    final codeInlineBg = isDark ? const Color(0xFF1B1E30) : const Color(0xFFE2E8F0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 14.0),
@@ -154,7 +136,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             height: 32,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                colors: [Color(0xFF34D399), Color(0xFF059669)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -174,7 +156,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
               decoration: BoxDecoration(
-                color: AppTheme.bgCard,
+                color: cardBg,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(5),
                   topRight: Radius.circular(18),
@@ -182,14 +164,14 @@ class _MessageBubbleState extends State<MessageBubble> {
                   bottomRight: Radius.circular(18),
                 ),
                 border: Border.all(
-                  color: AppTheme.borderColor,
+                  color: cardBorder,
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -207,7 +189,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.accentPurple,
+                              color: AppTheme.accentEmerald,
                             ),
                           ),
                           if (msg.webSearch) ...[
@@ -237,31 +219,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ],
                         ],
                       ),
-                      Row(
-                        children: [
-                          if (_isExporting)
-                            const SpinKitRing(color: AppTheme.accentCyan, size: 14, lineWidth: 2)
-                          else
-                            IconButton(
-                              icon: const Icon(Icons.download_rounded, size: 16, color: AppTheme.textMuted),
-                              tooltip: 'Export to Word (.docx)',
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: _handleExportDocx,
-                            ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(
-                              _copied ? Icons.check_rounded : Icons.copy_rounded,
-                              size: 15,
-                              color: _copied ? AppTheme.successGreen : AppTheme.textMuted,
-                            ),
-                            tooltip: 'Copy response',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            onPressed: _handleCopy,
-                          ),
-                        ],
+                      IconButton(
+                        icon: Icon(
+                          _copied ? Icons.check_rounded : Icons.copy_rounded,
+                          size: 15,
+                          color: _copied ? AppTheme.successGreen : AppTheme.textMuted,
+                        ),
+                        tooltip: 'Copy response',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: _handleCopy,
                       ),
                     ],
                   ),
@@ -272,16 +239,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.search_rounded, size: 12, color: Color(0xFF94A3B8)),
-                            SizedBox(width: 4),
+                            Icon(Icons.search_rounded, size: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                            const SizedBox(width: 4),
                             Text(
                               'Grounded Web Sources:',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFFCBD5E1),
+                                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
                               ),
                             ),
                           ],
@@ -301,9 +268,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF191D30),
+                                  color: sourceChipBg,
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                                  border: Border.all(color: sourceChipBorder),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -312,7 +279,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                     const SizedBox(width: 4),
                                     Text(
                                       domain,
-                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFFE2E8F0)),
+                                      style: TextStyle(fontSize: 10.5, color: sourceChipTextColor),
                                     ),
                                   ],
                                 ),
@@ -326,35 +293,38 @@ class _MessageBubbleState extends State<MessageBubble> {
 
                   const SizedBox(height: 10),
 
-                  // Markdown Body
+                  // Fast Markdown Body (Ultra-smooth 60/120 FPS rendering)
                   MarkdownBody(
                     data: msg.text,
-                    selectable: true,
+                    selectable: false,
+                    onTapLink: (text, href, title) {
+                      if (href != null) _openSourceUrl(href);
+                    },
                     styleSheet: MarkdownStyleSheet(
-                      p: const TextStyle(
+                      p: TextStyle(
                         fontSize: 14.5,
-                        height: 1.6,
-                        color: Color(0xFFECECF1),
+                        height: 1.55,
+                        color: textBodyColor,
                       ),
-                      h1: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, height: 1.4),
-                      h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, height: 1.4),
-                      h3: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, height: 1.4),
-                      strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
-                      em: const TextStyle(fontStyle: FontStyle.italic, color: Color(0xFFECECF1)),
-                      code: const TextStyle(
-                        backgroundColor: Color(0xFF1B1E30),
-                        color: Color(0xFF38BDF8),
+                      h1: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: headingColor, height: 1.35),
+                      h2: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: headingColor, height: 1.35),
+                      h3: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: headingColor, height: 1.35),
+                      strong: TextStyle(fontWeight: FontWeight.w700, color: headingColor),
+                      em: TextStyle(fontStyle: FontStyle.italic, color: textBodyColor),
+                      code: TextStyle(
+                        backgroundColor: codeInlineBg,
+                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                         fontSize: 12.5,
                         fontFamily: 'monospace',
                       ),
                       codeblockDecoration: BoxDecoration(
-                        color: const Color(0xFF121422),
+                        color: codeBlockBg,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: cardBorder),
                       ),
                       codeblockPadding: const EdgeInsets.all(12),
-                      listBullet: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 14, fontWeight: FontWeight.bold),
-                      a: const TextStyle(color: Color(0xFF60A5FA), decoration: TextDecoration.underline),
+                      listBullet: TextStyle(color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.bold),
+                      a: const TextStyle(color: Color(0xFF2563EB), decoration: TextDecoration.underline),
                     ),
                   ),
 
