@@ -264,6 +264,17 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       _saveState();
       _scrollToBottom();
+
+      // Deduct words in backend quota for assistant reply
+      if (result.error == null && replyText.isNotEmpty) {
+        final replyWords = replyText
+            .split(RegExp(r'\s+'))
+            .where((w) => w.trim().isNotEmpty)
+            .length;
+        if (replyWords > 0) {
+          ApiService.deductWordUsage(replyWords);
+        }
+      }
     }
   }
 

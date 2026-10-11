@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'user_avatar.dart';
 
@@ -22,6 +23,25 @@ class RightDrawer extends StatefulWidget {
 }
 
 class _RightDrawerState extends State<RightDrawer> {
+  Map<String, dynamic>? _usageData;
+  bool _isLoadingUsage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUsage();
+  }
+
+  Future<void> _fetchUsage() async {
+    final data = await ApiService.getWordUsage();
+    if (mounted) {
+      setState(() {
+        _usageData = data;
+        _isLoadingUsage = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -182,59 +202,81 @@ class _RightDrawerState extends State<RightDrawer> {
               const SizedBox(height: 16),
 
               // Usage Widget
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Builder(
+                builder: (context) {
+                  final isUnlimited = _usageData?['is_unlimited'] == true ||
+                      widget.user.isStaff ||
+                      widget.user.planName.toLowerCase().contains('pro');
+                  final int maxWords = (_usageData?['max_words'] as num?)?.toInt() ?? 5000;
+                  final int remainingWords = isUnlimited
+                      ? maxWords
+                      : ((_usageData?['remaining_words'] as num?)?.toInt() ?? 5000);
+                  final int usedWords = isUnlimited
+                      ? 0
+                      : ((_usageData?['used_words'] as num?)?.toInt() ?? (maxWords - remainingWords));
+                  final double progressValue = isUnlimited
+                      ? 1.0
+                      : (remainingWords / maxWords).clamp(0.0, 1.0);
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: bgCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Daily Word Allowance',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: textPrimary,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Daily Word Allowance',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: textPrimary,
+                              ),
+                            ),
+                            Text(
+                              isUnlimited ? 'Unlimited' : 'Active',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isUnlimited
+                                    ? AppTheme.accentEmerald
+                                    : AppTheme.successGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: _isLoadingUsage ? null : progressValue,
+                            minHeight: 6,
+                            backgroundColor: bgPill,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppTheme.accentEmerald),
                           ),
                         ),
-                        const Text(
-                          'Active',
+                        const SizedBox(height: 8),
+                        Text(
+                          isUnlimited
+                              ? 'Unlimited access · Pro Plan active'
+                              : '$remainingWords / $maxWords words remaining ($usedWords used today)',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.successGreen,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 11.5,
+                            color: textSecondary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: 0.35,
-                        minHeight: 6,
-                        backgroundColor: bgPill,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppTheme.accentEmerald),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '3,500 / 10,000 words used today',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
 
               const Spacer(),

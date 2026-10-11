@@ -874,4 +874,57 @@ class ApiService {
       return {'success': false, 'error': e.toString()};
     }
   }
+
+  // ─── WORD USAGE & QUOTA ───────────────────────────────────────────
+  static Future<Map<String, dynamic>> getWordUsage() async {
+    try {
+      final baseUrl = await StorageService.loadApiBaseUrl();
+      final url = Uri.parse('$baseUrl/api/usage/');
+      final sessionCookie = await AuthService.getSessionCookie();
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          if (sessionCookie != null && sessionCookie.isNotEmpty)
+            'Cookie': sessionCookie,
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      // Return empty map on network or parsing error
+    }
+    return {};
+  }
+
+  static Future<Map<String, dynamic>> deductWordUsage(int count) async {
+    if (count <= 0) return {};
+    try {
+      final baseUrl = await StorageService.loadApiBaseUrl();
+      final url = Uri.parse('$baseUrl/api/usage/');
+      final sessionCookie = await AuthService.getSessionCookie();
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (sessionCookie != null && sessionCookie.isNotEmpty)
+            'Cookie': sessionCookie,
+        },
+        body: jsonEncode({'deduct': count}),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      // Ignore background sync errors
+    }
+    return {};
+  }
 }
+
