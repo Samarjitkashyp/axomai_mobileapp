@@ -241,12 +241,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _flushStreamBuffer();
 
     if (mounted) {
+      final replyText = result.error != null
+          ? '⚠️ ${result.error}'
+          : (_streamingText ?? result.text);
+
       setState(() {
         _isLoading = false;
-        final replyText = result.error != null
-            ? '⚠️ ${result.error}'
-            : (_streamingText ?? result.text);
-
         final assistantMsg = ChatMessage(
           id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
           role: 'assistant',
