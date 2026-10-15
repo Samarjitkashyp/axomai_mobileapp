@@ -14,7 +14,7 @@ class InputBar extends StatelessWidget {
   final VoidCallback onSend;
   final double? bottomPadding;
   final String languageLabel;
-  final VoidCallback? onPickLanguage;
+  final ValueChanged<String>? onLanguageChanged;
   final bool listening;
   final bool transcribing;
   final VoidCallback? onMic;
@@ -22,7 +22,7 @@ class InputBar extends StatelessWidget {
   const InputBar({
     super.key,
     this.languageLabel = 'অসমীয়া',
-    this.onPickLanguage,
+    this.onLanguageChanged,
     this.listening = false,
     this.transcribing = false,
     this.onMic,
@@ -247,44 +247,17 @@ class InputBar extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
 
-                        // Tools Pill
-                        InkWell(
-                          onTap: onOpenTools,
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: pillBg,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: pillBorder),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.dashboard_customize_rounded,
-                                  size: 11,
-                                  color: textSecondary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '31+ Tools',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-
                         // Reply language pill
-                        InkWell(
-                          onTap: onPickLanguage,
-                          borderRadius: BorderRadius.circular(12),
+                        PopupMenuButton<String>(
+                          tooltip: 'Reply language',
+                          padding: EdgeInsets.zero,
+                          position: PopupMenuPosition.over,
+                          onSelected: onLanguageChanged,
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'assamese', child: Text('Assamese')),
+                            PopupMenuItem(value: 'hinglish', child: Text('Hinglish')),
+                            PopupMenuItem(value: 'english', child: Text('English')),
+                          ],
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
@@ -306,6 +279,8 @@ class InputBar extends StatelessWidget {
                                     color: textSecondary,
                                   ),
                                 ),
+                                Icon(Icons.arrow_drop_down_rounded,
+                                    size: 14, color: textSecondary),
                               ],
                             ),
                           ),

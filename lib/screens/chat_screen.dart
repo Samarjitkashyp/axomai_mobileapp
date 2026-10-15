@@ -81,34 +81,6 @@ class _ChatScreenState extends State<ChatScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _pickLanguage() async {
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: widget.isDarkMode ? AppTheme.bgSurface : Colors.white,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Reply language', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            ),
-            for (final e in _languageNames.entries)
-              ListTile(
-                title: Text(e.value),
-                trailing: e.key == _language ? const Icon(Icons.check_rounded, color: AppTheme.accentEmerald) : null,
-                onTap: () => Navigator.pop(ctx, e.key),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null && mounted) {
-      setState(() => _language = picked);
-      StorageService.saveChatLanguage(picked);
-    }
-  }
-
   Future<void> _toggleMic() async {
     final voice = VoiceService.instance;
     if (voice.recording.value) {
@@ -652,7 +624,10 @@ class _ChatScreenState extends State<ChatScreen> {
               isAssameseTranslit: _isAssameseTranslit,
               bottomPadding: 8,
               languageLabel: _languageNames[_language] ?? 'Assamese',
-              onPickLanguage: _pickLanguage,
+              onLanguageChanged: (v) {
+                setState(() => _language = v);
+                StorageService.saveChatLanguage(v);
+              },
               listening: VoiceService.instance.recording.value,
               transcribing: VoiceService.instance.transcribing.value,
               onMic: _toggleMic,
