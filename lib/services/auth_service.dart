@@ -122,7 +122,12 @@ class AuthService {
 
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_userKey);
-    if (raw != null && raw.isNotEmpty) {
+    // A signed-in user always has a server session. One without it (an old offline "Google" sign-in) is not really signed in:
+    // the server sees a guest, so the app must too, instead of showing a name and then asking to log in again.
+    final hasSession = (await getSessionCookie())?.isNotEmpty ?? false;
+    if (raw != null && raw.isNotEmpty && !hasSession) {
+      await prefs.remove(_userKey);
+    } else if (raw != null && raw.isNotEmpty) {
       try {
         final data = jsonDecode(raw) as Map<String, dynamic>;
         var user = AuthUser.fromJson(data);
