@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/auth_service.dart';
+import '../services/payment_service.dart';
+import 'plans_screen.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/user_avatar.dart';
@@ -33,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   AuthUser _user = AuthUser.guest();
   int _dailyUsage = 0;
+  CurrentPlan? _plan; // the real plan from the server (null while it loads)
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -122,6 +125,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _user = synced);
       }
     });
+    _loadPlan();
+  }
+
+  Future<void> _loadPlan() async {
+    final plan = await PaymentService.fetchCurrentPlan();
+    if (mounted) setState(() => _plan = plan);
+  }
+
+  Future<void> _openPlans() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlansScreen(
+          signedIn: _user.isAuthenticated,
+          onOpenLogin: () => Navigator.pop(context),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _loadPlan();
+    final synced = await AuthService.syncUserStatus();
+    if (mounted) setState(() => _user = synced);
   }
 
   Future<void> _pickProfilePhoto() async {
@@ -706,18 +731,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // --- Widget 3: Subscription & Plan Section (ChatGPT Plus Style) ---
   Widget _buildSubscriptionCard(int freeDailyLimit, int remaining) {
-    final isPro = _user.isStaff;
+    final plan = _plan;
+    final isPaid = plan?.active ?? _user.isStaff;
+    final unlimited = (plan?.daysLeft ?? 0) >= 9000;
+    final label = isPaid ? (plan?.label ?? 'Axom AI Pro') : 'Axom AI Free';
+    final accent = isPaid ? Colors.amber : AppTheme.accentEmerald;
+
+    String detail;
+    if (!_user.isAuthenticated) {
+      detail = 'Log in to see your plan.';
+    } else if (plan == null) {
+      detail = 'Checking your plan...';
+    } else if (isPaid) {
+      detail = unlimited
+          ? 'Unlimited access.'
+          : '${plan.daysLeft} days left${plan.expiresAt != null ? ' (until ${_dateOnly(plan.expiresAt!)})' : ''}';
+    } else {
+      detail = '$remaining of $freeDailyLimit free messages left today';
+    }
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isPro
-              ? Colors.amber.withValues(alpha: 0.4)
-              : AppTheme.accentPurple.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,8 +766,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 children: [
                   Icon(
-                    isPro ? Icons.workspace_premium_rounded : Icons.star_outline_rounded,
-                    color: isPro ? Colors.amber : AppTheme.accentPink,
+                    isPaid ? Icons.workspace_premium_rounded : Icons.star_outline_rounded,
+                    color: accent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -746,17 +784,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppTheme.successGreen.withValues(alpha: 0.15),
+                  color: accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                      color: AppTheme.successGreen.withValues(alpha: 0.3)),
+                  border: Border.all(color: accent.withValues(alpha: 0.3)),
                 ),
-                child: const Text(
-                  'ACTIVE',
+                child: Text(
+                  isPaid ? 'ACTIVE' : 'FREE',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.successGreen,
+                    color: accent,
                   ),
                 ),
               ),
@@ -764,7 +801,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            isPro ? 'Axom AI Pro Plus' : 'Axom AI Free Plan',
+            label,
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
@@ -773,55 +810,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            isPro
-                ? 'Unlimited access to advanced reasoning, web synthesis, and file vision.'
-                : 'Daily free allowance with standard model rotation.',
+            detail,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 12.5,
               color: AppTheme.textMuted,
               height: 1.4,
             ),
           ),
           const SizedBox(height: 14),
-
-          // Plan Features List (ChatGPT Plus style checkmarks)
-          _buildPlanFeature('Access to Axom 2.0 Pro model rotation', true),
-          _buildPlanFeature('Bilingual Assamese & English reasoning', true),
-          _buildPlanFeature('Document & PDF intelligence synthesis', true),
-          _buildPlanFeature('Live Web Search & real-time citations', true),
+          _buildPlanFeature('Bilingual Assamese & English answers', true),
+          _buildPlanFeature('Voice typing and spoken replies', true),
+          _buildPlanFeature('Picture and PDF questions', true),
+          _buildPlanFeature('Live web search with sources', true),
           _buildPlanFeature(
-            isPro ? '5x faster generation speed' : 'Standard generation speed',
-            isPro,
+            isPaid ? 'Higher limits and faster responses' : 'Higher limits and faster responses (paid plans)',
+            isPaid,
           ),
-
           const SizedBox(height: 16),
-
-          // Upgrade CTA or Manage Plan
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPro ? AppTheme.bgPill : AppTheme.accentPurple,
-              foregroundColor: isPro ? AppTheme.accentPurple : Colors.white,
+              backgroundColor: isPaid ? AppTheme.bgPill : AppTheme.accentEmerald,
+              foregroundColor: isPaid ? AppTheme.accentEmerald : Colors.black,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: isPro ? AppTheme.borderColor : Colors.transparent,
-                ),
+                side: BorderSide(color: isPaid ? AppTheme.borderColor : Colors.transparent),
               ),
               minimumSize: const Size(double.infinity, 42),
             ),
-            onPressed: () =>
-                _openUrl('https://chat.aiaxom.co.in/subscription'),
+            onPressed: _openPlans,
             child: Text(
-              isPro ? 'Manage Subscription' : 'Upgrade to Axom Pro Plus',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
+              isPaid ? 'Renew or change plan' : 'Upgrade your plan',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _dateOnly(String iso) {
+    final d = DateTime.tryParse(iso)?.toLocal();
+    if (d == null) return '';
+    const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${d.day} ${m[d.month - 1]} ${d.year}';
   }
 
   Widget _buildPlanFeature(String text, bool active) {
