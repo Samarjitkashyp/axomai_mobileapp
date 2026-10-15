@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -85,14 +86,64 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ),
                 ],
               ),
-              child: Text(
-                widget.message.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.5,
-                  height: 1.5,
-                  letterSpacing: 0.1,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.message.imagePath != null &&
+                      File(widget.message.imagePath!).existsSync())
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GestureDetector(
+                        onTap: () => showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.black,
+                            insetPadding: const EdgeInsets.all(8),
+                            child: InteractiveViewer(
+                              child: Image.file(File(widget.message.imagePath!)),
+                            ),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(widget.message.imagePath!),
+                            width: 220,
+                            fit: BoxFit.cover,
+                            cacheWidth: 440,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (widget.message.fileName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.picture_as_pdf_rounded,
+                              size: 18, color: Colors.white70),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(widget.message.fileName!,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12.5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (widget.message.text.isNotEmpty)
+                    Text(
+                      widget.message.text,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.5,
+                        height: 1.5,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

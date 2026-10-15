@@ -16,6 +16,7 @@ class InputBar extends StatelessWidget {
   final String languageLabel;
   final ValueChanged<String>? onLanguageChanged;
   final bool listening;
+  final bool hasAttachment;
   final bool transcribing;
   final VoidCallback? onMic;
 
@@ -24,6 +25,7 @@ class InputBar extends StatelessWidget {
     this.languageLabel = 'অসমীয়া',
     this.onLanguageChanged,
     this.listening = false,
+    this.hasAttachment = false,
     this.transcribing = false,
     this.onMic,
     required this.controller,
@@ -279,7 +281,7 @@ class InputBar extends StatelessWidget {
                       valueListenable: controller,
                       builder: (context, value, child) {
                         final canSend =
-                            value.text.trim().isNotEmpty && !isLoading;
+                            (value.text.trim().isNotEmpty || hasAttachment) && !isLoading;
 
                         return Container(
                           width: 34,

@@ -26,6 +26,8 @@ class ChatMessage {
   final List<WebSource> sources;
   final bool fromDatabase;
   final DateTime timestamp;
+  final String? imagePath; // a picture the user sent (a copy kept in the app)
+  final String? fileName; // a document the user sent
 
   ChatMessage({
     required this.id,
@@ -36,6 +38,8 @@ class ChatMessage {
     this.sources = const [],
     this.fromDatabase = false,
     DateTime? timestamp,
+    this.imagePath,
+    this.fileName,
   }) : timestamp = timestamp ?? DateTime.now();
 
   bool get isUser => role == 'user';
@@ -50,6 +54,8 @@ class ChatMessage {
         .toList();
 
     return ChatMessage(
+      imagePath: json['image_path'] as String?,
+      fileName: json['file_name'] as String?,
       id: json['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
       role: json['role'] as String? ?? 'assistant',
       text: json['text'] as String? ?? '',
@@ -72,5 +78,7 @@ class ChatMessage {
     'sources': sources.map((s) => s.toJson()).toList(),
     'from_database': fromDatabase,
     'timestamp': timestamp.toIso8601String(),
+    if (imagePath != null) 'image_path': imagePath,
+    if (fileName != null) 'file_name': fileName,
   };
 }
