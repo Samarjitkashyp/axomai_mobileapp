@@ -7,6 +7,7 @@ import '../models/chat_session.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_gate_screen.dart';
 import 'login_screen.dart';
@@ -55,7 +56,81 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     AuthService.currentUserNotifier.addListener(_onAuthChanged);
+    StorageService.loadChatLanguage().then((v) {
+      if (mounted) setState(() => _language = v);
+    });
+    VoiceService.instance.recording.addListener(_onVoiceChanged);
+    VoiceService.instance.transcribing.addListener(_onVoiceChanged);
     _initializeData();
+  }
+
+  String _language = 'assamese';
+
+  void _onVoiceChanged() {
+    if (mounted) setState(() {});
+  }
+
+  static const Map<String, String> _languageNames = {
+    'assamese': 'Assamese',
+    'hinglish': 'Hinglish',
+    'english': 'English',
+  };
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _pickLanguage() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: widget.isDarkMode ? AppTheme.bgSurface : Colors.white,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Reply language', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            for (final e in _languageNames.entries)
+              ListTile(
+                title: Text(e.value),
+                trailing: e.key == _language ? const Icon(Icons.check_rounded, color: AppTheme.accentEmerald) : null,
+                onTap: () => Navigator.pop(ctx, e.key),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() => _language = picked);
+      StorageService.saveChatLanguage(picked);
+    }
+  }
+
+  Future<void> _toggleMic() async {
+    final voice = VoiceService.instance;
+    if (voice.recording.value) {
+      await _finishVoice();
+      return;
+    }
+    final ok = await voice.startRecording(onAutoStop: _finishVoice);
+    if (!ok) _snack('Allow the microphone to use voice typing.');
+  }
+
+  Future<void> _finishVoice() async {
+    final voice = VoiceService.instance;
+    if (!voice.recording.value) return;
+    try {
+      final text = await voice.finishRecording(language: _language);
+      if (!mounted || text.isEmpty) return;
+      final old = _inputController.text.trim();
+      _inputController.text = old.isEmpty ? text : '$old $text';
+      _inputController.selection = TextSelection.collapsed(offset: _inputController.text.length);
+    } on VoiceException catch (e) {
+      _snack(e.message);
+    }
   }
 
   void _onAuthChanged() {
@@ -69,6 +144,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     AuthService.currentUserNotifier.removeListener(_onAuthChanged);
+    VoiceService.instance.recording.removeListener(_onVoiceChanged);
+    VoiceService.instance.transcribing.removeListener(_onVoiceChanged);
+    VoiceService.instance.cancelRecording();
+    VoiceService.instance.stop();
     _streamThrottleTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
@@ -225,6 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final result = await ApiService.sendMessage(
       prompt: text,
       webSearch: _webSearch,
+      language: _language,
       sessionId: session.id,
       history: session.messages,
       onTokenReceived: (chunk) {
@@ -571,6 +651,11 @@ class _ChatScreenState extends State<ChatScreen> {
               webSearch: _webSearch,
               isAssameseTranslit: _isAssameseTranslit,
               bottomPadding: 8,
+              languageLabel: _languageNames[_language] ?? 'Assamese',
+              onPickLanguage: _pickLanguage,
+              listening: VoiceService.instance.recording.value,
+              transcribing: VoiceService.instance.transcribing.value,
+              onMic: _toggleMic,
               onToggleWebSearch: () {
                 setState(() => _webSearch = !_webSearch);
               },

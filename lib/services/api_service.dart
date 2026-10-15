@@ -163,7 +163,7 @@ class ApiService {
         } else if (streamedResponse.statusCode == 429) {
           return ChatResponseResult(
             text: '',
-            error: 'Rate limit reached. Please wait a moment before asking again.',
+            error: 'You have reached the limit for now. Please wait a little, or upgrade your plan for more messages.',
           );
         } else {
           return ChatResponseResult(

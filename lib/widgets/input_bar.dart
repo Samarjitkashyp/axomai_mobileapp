@@ -13,9 +13,19 @@ class InputBar extends StatelessWidget {
   final VoidCallback onPickAttachment;
   final VoidCallback onSend;
   final double? bottomPadding;
+  final String languageLabel;
+  final VoidCallback? onPickLanguage;
+  final bool listening;
+  final bool transcribing;
+  final VoidCallback? onMic;
 
   const InputBar({
     super.key,
+    this.languageLabel = 'অসমীয়া',
+    this.onPickLanguage,
+    this.listening = false,
+    this.transcribing = false,
+    this.onMic,
     required this.controller,
     required this.isLoading,
     required this.webSearch,
@@ -139,7 +149,10 @@ class InputBar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Left Control Pills
-                    Row(
+                    Expanded(
+                     child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
                       children: [
                         // Assamese Transliteration Toggle Pill
                         InkWell(
@@ -266,7 +279,73 @@ class InputBar extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const SizedBox(width: 6),
+
+                        // Reply language pill
+                        InkWell(
+                          onTap: onPickLanguage,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: pillBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: pillBorder),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.translate_rounded,
+                                    size: 11, color: textSecondary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  languageLabel,
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
                       ],
+                    ),
+                     ),
+                    ),
+
+                    // Mic (voice typing)
+                    Container(
+                      width: 34,
+                      height: 34,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: listening
+                            ? Colors.redAccent.withValues(alpha: 0.2)
+                            : pillBg,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: listening ? Colors.redAccent : pillBorder),
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: transcribing
+                            ? SpinKitRing(
+                                color: textSecondary, size: 16, lineWidth: 2)
+                            : Icon(
+                                listening
+                                    ? Icons.stop_rounded
+                                    : Icons.mic_rounded,
+                                size: 18,
+                                color: listening
+                                    ? Colors.redAccent
+                                    : textSecondary,
+                              ),
+                        onPressed: (isLoading || transcribing) ? null : onMic,
+                        tooltip: listening ? 'Stop' : 'Voice typing',
+                      ),
                     ),
 
                     // Right Send Button

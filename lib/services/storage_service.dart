@@ -65,4 +65,35 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_apiUrlKey, url);
   }
+
+  // Chat language (assamese | hinglish | english), voice (male | female) and voice speed
+  static Future<String> loadChatLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('axom_ai_chat_language') ?? 'assamese';
+  }
+
+  static Future<void> saveChatLanguage(String v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('axom_ai_chat_language', v);
+  }
+
+  static Future<String> loadVoice() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('axom_ai_voice') ?? 'female';
+  }
+
+  static Future<void> saveVoice(String v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('axom_ai_voice', v);
+  }
+
+  static Future<double> loadVoiceSpeed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('axom_ai_voice_speed') ?? 1.0;
+  }
+
+  static Future<void> saveVoiceSpeed(double v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('axom_ai_voice_speed', v);
+  }
 }

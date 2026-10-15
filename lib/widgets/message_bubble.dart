@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -28,6 +29,12 @@ class _MessageBubbleState extends State<MessageBubble> {
     setState(() => _copied = true);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  void _handleSpeak() {
+    VoiceService.instance.speak(widget.message.id, widget.message.text, onError: (m) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
     });
   }
 
@@ -219,6 +226,27 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ],
                         ],
                       ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ValueListenableBuilder<String?>(
+                            valueListenable: VoiceService.instance.speakingId,
+                            builder: (context, speaking, _) {
+                              final on = speaking == widget.message.id;
+                              return IconButton(
+                                icon: Icon(
+                                  on ? Icons.stop_circle_rounded : Icons.volume_up_rounded,
+                                  size: 17,
+                                  color: on ? AppTheme.accentEmerald : AppTheme.textMuted,
+                                ),
+                                tooltip: on ? 'Stop' : 'Listen',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: _handleSpeak,
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
                       IconButton(
                         icon: Icon(
                           _copied ? Icons.check_rounded : Icons.copy_rounded,
@@ -229,6 +257,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: _handleCopy,
+                      ),
+                        ],
                       ),
                     ],
                   ),
