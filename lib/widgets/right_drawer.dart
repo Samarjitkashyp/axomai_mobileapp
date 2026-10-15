@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../screens/plans_screen.dart';
 import 'user_avatar.dart';
 
 class RightDrawer extends StatefulWidget {
@@ -328,10 +329,13 @@ class _RightDrawerState extends State<RightDrawer> {
                         minimumSize: const Size.fromHeight(38),
                       ),
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Visit https://aiaxom.co.in/pricing to upgrade!'),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlansScreen(
+                              signedIn: widget.user.isAuthenticated,
+                              onOpenLogin: widget.onOpenLogin,
+                            ),
                           ),
                         );
                       },
