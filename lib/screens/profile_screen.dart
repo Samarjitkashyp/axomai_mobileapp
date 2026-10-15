@@ -27,6 +27,10 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  String _chatLanguage = 'assamese';
+  String _voice = 'female';
+  double _voiceSpeed = 1.0;
+
   AuthUser _user = AuthUser.guest();
   int _dailyUsage = 0;
   bool _isLoading = true;
@@ -41,6 +45,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    StorageService.loadChatLanguage().then((v) { if (mounted) setState(() => _chatLanguage = v == 'english' ? 'english' : 'assamese'); });
+    StorageService.loadVoice().then((v) { if (mounted) setState(() => _voice = v); });
+    StorageService.loadVoiceSpeed().then((v) { if (mounted) setState(() => _voiceSpeed = v); });
     _nameController = TextEditingController();
     _emailController = TextEditingController();
     _addressController = TextEditingController();
@@ -869,10 +876,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSettingTile(
             icon: Icons.translate_rounded,
             iconColor: AppTheme.accentCyan,
-            title: 'Primary AI Language',
-            subtitle: 'Assamese, English, Hindi bilingual',
-            trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: AppTheme.textMuted),
+            title: 'Reply language',
+            subtitle: 'The language Axom AI answers in',
+            trailing: _dropdown<String>(
+              _chatLanguage,
+              const {'assamese': 'Assamese', 'english': 'English'},
+              (v) {
+                setState(() => _chatLanguage = v);
+                StorageService.saveChatLanguage(v);
+              },
+            ),
+          ),
+          const Divider(height: 1, color: AppTheme.borderColor),
+          _buildSettingTile(
+            icon: Icons.record_voice_over_rounded,
+            iconColor: AppTheme.accentEmerald,
+            title: 'Voice for replies',
+            subtitle: 'Used by the speaker button on answers',
+            trailing: _dropdown<String>(
+              _voice,
+              const {'female': 'Female', 'male': 'Male'},
+              (v) {
+                setState(() => _voice = v);
+                StorageService.saveVoice(v);
+              },
+            ),
+          ),
+          const Divider(height: 1, color: AppTheme.borderColor),
+          _buildSettingTile(
+            icon: Icons.speed_rounded,
+            iconColor: AppTheme.accentPurple,
+            title: 'Voice speed',
+            subtitle: 'Speed of the spoken answer',
+            trailing: _dropdown<double>(
+              _voiceSpeed,
+              {0.75: 'Slow', 1.0: 'Normal', 1.25: 'Fast', 1.5: 'Faster'},
+              (v) {
+                setState(() => _voiceSpeed = v);
+                StorageService.saveVoiceSpeed(v);
+              },
+            ),
           ),
         ],
       ),
@@ -1034,6 +1077,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _dropdown<T>(T value, Map<T, String> options, ValueChanged<T> onChanged) {
+    return DropdownButton<T>(
+      value: options.containsKey(value) ? value : options.keys.first,
+      underline: const SizedBox.shrink(),
+      dropdownColor: AppTheme.bgCard,
+      style: const TextStyle(fontSize: 12.5, color: AppTheme.textPrimary),
+      items: [for (final e in options.entries) DropdownMenuItem<T>(value: e.key, child: Text(e.value))],
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
     );
   }
 

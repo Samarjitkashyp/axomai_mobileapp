@@ -57,6 +57,9 @@ class ApiService {
     required List<ChatMessage> history,
     void Function(String tokenChunk)? onTokenReceived,
     String? language,
+    String? attachedImage, // data:image/jpeg;base64,...
+    String? attachedPdf, // data:application/pdf;base64,...
+    String? attachedFilename,
   }) async {
     final baseUrl = await StorageService.loadApiBaseUrl();
     final url = Uri.parse('$baseUrl/api/chat/');
@@ -70,6 +73,10 @@ class ApiService {
       'web_search': webSearch,
       'session_id': sessionId,
       'language': language ?? 'assamese',
+      if (attachedImage != null) 'attached_image': attachedImage,
+      if (attachedImage != null) 'has_attached_image': true,
+      if (attachedPdf != null) 'attached_pdf': attachedPdf,
+      if (attachedFilename != null) 'attached_filename': attachedFilename,
       'history': recentHistory
           .map((m) => {'role': m.role, 'text': m.text})
           .toList(),
@@ -163,12 +170,14 @@ class ApiService {
         } else if (streamedResponse.statusCode == 429) {
           return ChatResponseResult(
             text: '',
-            error: 'Rate limit reached. Please wait a moment before asking again.',
+            error: 'You have reached the limit for now. Please wait a little, or upgrade your plan for more messages.',
           );
         } else {
           return ChatResponseResult(
             text: '',
-            error: 'Server busy (${streamedResponse.statusCode}). Please try again shortly.',
+            error: streamedResponse.statusCode == 413
+                ? 'That file is too big. Try a smaller picture or document.'
+                : 'Server busy (${streamedResponse.statusCode}). Please try again shortly.',
           );
         }
       }

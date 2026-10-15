@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -7,6 +11,7 @@ import '../models/chat_session.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 import 'auth_gate_screen.dart';
 import 'login_screen.dart';
@@ -55,7 +60,53 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     AuthService.currentUserNotifier.addListener(_onAuthChanged);
+    StorageService.loadChatLanguage().then((v) {
+      if (mounted) setState(() => _language = v == 'english' ? 'english' : 'assamese');
+    });
+    VoiceService.instance.recording.addListener(_onVoiceChanged);
+    VoiceService.instance.transcribing.addListener(_onVoiceChanged);
     _initializeData();
+  }
+
+  String _language = 'assamese';
+
+  void _onVoiceChanged() {
+    if (mounted) setState(() {});
+  }
+
+  static const Map<String, String> _languageNames = {
+    'assamese': 'Assamese',
+    'english': 'English',
+  };
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _toggleMic() async {
+    final voice = VoiceService.instance;
+    if (voice.recording.value) {
+      await _finishVoice();
+      return;
+    }
+    final ok = await voice.startRecording(onAutoStop: _finishVoice);
+    if (!ok) _snack('Allow the microphone to use voice typing.');
+  }
+
+  Future<void> _finishVoice() async {
+    final voice = VoiceService.instance;
+    if (!voice.recording.value) return;
+    try {
+      final text = await voice.finishRecording(language: _language);
+      if (!mounted || text.isEmpty) return;
+      final old = _inputController.text.trim();
+      _inputController.text = old.isEmpty ? text : '$old $text';
+      _inputController.selection = TextSelection.collapsed(offset: _inputController.text.length);
+      _handleSendMessage(); // spoken words go straight to the AI: no second tap
+    } on VoiceException catch (e) {
+      _snack(e.message);
+    }
   }
 
   void _onAuthChanged() {
@@ -69,6 +120,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     AuthService.currentUserNotifier.removeListener(_onAuthChanged);
+    VoiceService.instance.recording.removeListener(_onVoiceChanged);
+    VoiceService.instance.transcribing.removeListener(_onVoiceChanged);
+    VoiceService.instance.cancelRecording();
+    VoiceService.instance.stop();
     _streamThrottleTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
@@ -188,10 +243,37 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _handleSendMessage([String? overrideText]) async {
     String text = overrideText ?? _inputController.text.trim();
-    if (text.isEmpty || _isLoading) return;
+    final attachPath = overrideText == null ? _attachPath : null;
+    final attachIsImage = _attachIsImage;
+    final attachName = _attachName;
+    if ((text.isEmpty && attachPath == null) || _isLoading) return;
 
-    if (_isAssameseTranslit && overrideText == null) {
+    if (_isAssameseTranslit && overrideText == null && text.isNotEmpty) {
       text = await ApiService.transliterateAssamese(text);
+    }
+
+    // The file is read before anything is shown, so a failure leaves the message and the attachment as they were.
+    String? imageB64, pdfB64;
+    if (attachPath != null) {
+      try {
+        final bytes = await File(attachPath).readAsBytes();
+        if (attachIsImage) {
+          imageB64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+        } else {
+          pdfB64 = 'data:application/pdf;base64,${base64Encode(bytes)}';
+        }
+      } catch (_) {
+        _snack('Could not read the file. Please attach it again.');
+        setState(() => _attachPath = null);
+        return;
+      }
+    }
+    final sentText = text;
+    if (text.isEmpty) {
+      final asm = _language == 'assamese';
+      text = attachIsImage
+          ? (asm ? 'এই ছবিখনত কি আছে? বুজাই দিয়ক।' : 'What is in this image? Please explain.')
+          : (asm ? 'এই নথিখনৰ সাৰাংশ দিয়ক।' : 'Please summarise this document.');
     }
 
     _inputController.clear();
@@ -209,8 +291,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final userMessage = ChatMessage(
       id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
       role: 'user',
-      text: text,
+      text: sentText,
       timestamp: DateTime.now(),
+      imagePath: attachIsImage ? attachPath : null,
+      fileName: (!attachIsImage && attachPath != null) ? attachName : null,
     );
 
     setState(() {
@@ -218,6 +302,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
       _streamingText = null;
       _streamBuffer = '';
+      if (attachPath != null) _attachPath = null;
     });
     _saveState();
     _scrollToBottom();
@@ -225,6 +310,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final result = await ApiService.sendMessage(
       prompt: text,
       webSearch: _webSearch,
+      language: _language,
+      attachedImage: imageB64,
+      attachedPdf: pdfB64,
+      attachedFilename: attachName,
       sessionId: session.id,
       history: session.messages,
       onTokenReceived: (chunk) {
@@ -278,43 +367,167 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // A picture or a PDF waiting to be sent with the next message.
+  String? _attachPath;
+  String? _attachName;
+  bool _attachIsImage = true;
+
   Future<void> _handlePickAttachment() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx'],
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        final isImage = ['jpg', 'jpeg', 'png', 'webp'].contains(file.extension?.toLowerCase());
-
-        if (isImage) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('🔍 Extracting OCR text from ${file.name}...'),
-              backgroundColor: AppTheme.accentPurple,
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: widget.isDarkMode ? AppTheme.bgSurface : Colors.white,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Photo from gallery'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
             ),
-          );
-          final ocrRes = await ApiService.performOCR(file);
-          if (ocrRes['success'] == true && ocrRes['text'] != null) {
-            final extracted = ocrRes['text'].toString().trim();
-            if (extracted.isNotEmpty) {
-              _inputController.text = 'Analyze this extracted image text:\n\n$extracted';
-            }
-          } else {
-            _inputController.text = 'Attached image: ${file.name}. Please explain the visual contents.';
-          }
-        } else {
-          _inputController.text = 'Attached document: ${file.name}. Please provide a comprehensive summary.';
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_rounded),
+              title: const Text('PDF document'),
+              onTap: () => Navigator.pop(ctx, 'pdf'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null) return;
+    try {
+      if (choice == 'pdf') {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf'],
+        );
+        final f = result?.files.firstOrNull;
+        if (f?.path == null) return;
+        if (f!.size > 8 * 1024 * 1024) {
+          _snack('That PDF is too big (over 8 MB). Please pick a smaller one.');
+          return;
         }
+        setState(() {
+          _attachPath = f.path;
+          _attachName = f.name;
+          _attachIsImage = false;
+        });
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Attachment error: $e')),
+      // The picker shrinks the picture (longest side 1600 px, JPEG) so the upload is quick.
+      final picked = await ImagePicker().pickImage(
+        source: choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 82,
       );
+      if (picked == null) return;
+      final dir = await getApplicationDocumentsDirectory();
+      final folder = Directory('${dir.path}/attachments');
+      if (!folder.existsSync()) folder.createSync(recursive: true);
+      final keep = '${folder.path}/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await File(picked.path).copy(keep);
+      setState(() {
+        _attachPath = keep;
+        _attachName = picked.name;
+        _attachIsImage = true;
+      });
+    } catch (e) {
+      _snack('Could not open the file: $e');
     }
+  }
+
+  Widget _buildListeningStrip() {
+    final voice = VoiceService.instance;
+    final listening = voice.recording.value;
+    final busy = voice.transcribing.value;
+    if (!listening && !busy) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: (listening ? Colors.redAccent : AppTheme.accentPurple).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: (listening ? Colors.redAccent : AppTheme.accentPurple).withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          if (listening)
+            ValueListenableBuilder<double>(
+              valueListenable: voice.level,
+              builder: (_, v, __) => Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  for (final k in const [0.5, 0.9, 1.0, 0.8, 0.55, 0.9, 0.6])
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 110),
+                      width: 4,
+                      height: 6 + 24 * (v * k),
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(3)),
+                    ),
+                ],
+              ),
+            )
+          else
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accentPurple),
+            ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              listening ? 'Listening... speak now' : 'Understanding what you said...',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (listening)
+            TextButton(
+              onPressed: () => VoiceService.instance.cancelRecording(),
+              child: const Text('Cancel'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentPreview() {
+    if (_attachPath == null) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? AppTheme.bgSurface : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          if (_attachIsImage)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(File(_attachPath!), width: 54, height: 54, fit: BoxFit.cover, cacheWidth: 160),
+            )
+          else
+            const Icon(Icons.picture_as_pdf_rounded, size: 36, color: Colors.redAccent),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(_attachName ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 20),
+            tooltip: 'Remove',
+            onPressed: () => setState(() => _attachPath = null),
+          ),
+        ],
+      ),
+    );
   }
 
   void _openToolsSheet() {
@@ -564,6 +777,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
             ),
 
+            _buildAttachmentPreview(),
+            _buildListeningStrip(),
+
             // Bottom Floating Input Bar
             InputBar(
               controller: _inputController,
@@ -571,6 +787,15 @@ class _ChatScreenState extends State<ChatScreen> {
               webSearch: _webSearch,
               isAssameseTranslit: _isAssameseTranslit,
               bottomPadding: 8,
+              languageLabel: _languageNames[_language] ?? 'Assamese',
+              onLanguageChanged: (v) {
+                setState(() => _language = v == 'english' ? 'english' : 'assamese');
+                StorageService.saveChatLanguage(v);
+              },
+              listening: VoiceService.instance.recording.value,
+              hasAttachment: _attachPath != null,
+              transcribing: VoiceService.instance.transcribing.value,
+              onMic: _toggleMic,
               onToggleWebSearch: () {
                 setState(() => _webSearch = !_webSearch);
               },

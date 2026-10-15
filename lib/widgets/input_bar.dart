@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 
 class InputBar extends StatelessWidget {
@@ -13,9 +14,21 @@ class InputBar extends StatelessWidget {
   final VoidCallback onPickAttachment;
   final VoidCallback onSend;
   final double? bottomPadding;
+  final String languageLabel;
+  final ValueChanged<String>? onLanguageChanged;
+  final bool listening;
+  final bool hasAttachment;
+  final bool transcribing;
+  final VoidCallback? onMic;
 
   const InputBar({
     super.key,
+    this.languageLabel = 'অসমীয়া',
+    this.onLanguageChanged,
+    this.listening = false,
+    this.hasAttachment = false,
+    this.transcribing = false,
+    this.onMic,
     required this.controller,
     required this.isLoading,
     required this.webSearch,
@@ -139,56 +152,11 @@ class InputBar extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Left Control Pills
-                    Row(
+                    Expanded(
+                     child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
                       children: [
-                        // Assamese Transliteration Toggle Pill
-                        InkWell(
-                          onTap: onToggleTranslit,
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isAssameseTranslit
-                                  ? AppTheme.accentEmerald.withOpacity(0.2)
-                                  : pillBg,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isAssameseTranslit
-                                    ? AppTheme.accentEmerald.withOpacity(0.6)
-                                    : pillBorder,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'অ',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isAssameseTranslit
-                                        ? AppTheme.accentEmerald
-                                        : textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isAssameseTranslit ? 'অসমীয়া ON' : 'অসমীয়া',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: isAssameseTranslit
-                                        ? AppTheme.accentEmerald
-                                        : textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-
                         // Web Search Toggle Pill
                         InkWell(
                           onTap: onToggleWebSearch,
@@ -234,10 +202,16 @@ class InputBar extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
 
-                        // Tools Pill
-                        InkWell(
-                          onTap: onOpenTools,
-                          borderRadius: BorderRadius.circular(12),
+                        // Reply language pill
+                        PopupMenuButton<String>(
+                          tooltip: 'Reply language',
+                          padding: EdgeInsets.zero,
+                          position: PopupMenuPosition.over,
+                          onSelected: onLanguageChanged,
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'assamese', child: Text('Assamese')),
+                            PopupMenuItem(value: 'english', child: Text('English')),
+                          ],
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
@@ -248,25 +222,70 @@ class InputBar extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  Icons.dashboard_customize_rounded,
-                                  size: 11,
-                                  color: textSecondary,
-                                ),
+                                Icon(Icons.translate_rounded,
+                                    size: 11, color: textSecondary),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '31+ Tools',
+                                  languageLabel,
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,
                                     color: textSecondary,
                                   ),
                                 ),
+                                Icon(Icons.arrow_drop_down_rounded,
+                                    size: 14, color: textSecondary),
                               ],
                             ),
                           ),
                         ),
+                        const SizedBox(width: 6),
                       ],
+                    ),
+                     ),
+                    ),
+
+                    // Mic (voice typing)
+                    ValueListenableBuilder<double>(
+                     valueListenable: VoiceService.instance.level,
+                     builder: (context, lv, child) => Container(
+                      width: 34,
+                      height: 34,
+                      margin: const EdgeInsets.only(right: 6),
+                      foregroundDecoration: listening
+                          ? BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.redAccent.withValues(alpha: 0.35 + 0.4 * lv),
+                                  width: 1 + 4 * lv),
+                            )
+                          : null,
+                      decoration: BoxDecoration(
+                        color: listening
+                            ? Colors.redAccent.withValues(alpha: 0.2)
+                            : pillBg,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: listening ? Colors.redAccent : pillBorder),
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: transcribing
+                            ? SpinKitRing(
+                                color: textSecondary, size: 16, lineWidth: 2)
+                            : Icon(
+                                listening
+                                    ? Icons.stop_rounded
+                                    : Icons.mic_rounded,
+                                size: 18,
+                                color: listening
+                                    ? Colors.redAccent
+                                    : textSecondary,
+                              ),
+                        onPressed: (isLoading || transcribing) ? null : onMic,
+                        tooltip: listening ? 'Stop' : 'Voice typing',
+                      ),
+                     ),
                     ),
 
                     // Right Send Button
@@ -274,7 +293,7 @@ class InputBar extends StatelessWidget {
                       valueListenable: controller,
                       builder: (context, value, child) {
                         final canSend =
-                            value.text.trim().isNotEmpty && !isLoading;
+                            (value.text.trim().isNotEmpty || hasAttachment) && !isLoading;
 
                         return Container(
                           width: 34,

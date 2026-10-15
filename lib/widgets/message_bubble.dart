@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatefulWidget {
@@ -28,6 +30,12 @@ class _MessageBubbleState extends State<MessageBubble> {
     setState(() => _copied = true);
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  void _handleSpeak() {
+    VoiceService.instance.speak(widget.message.id, widget.message.text, onError: (m) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
     });
   }
 
@@ -78,14 +86,64 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ),
                 ],
               ),
-              child: Text(
-                widget.message.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.5,
-                  height: 1.5,
-                  letterSpacing: 0.1,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.message.imagePath != null &&
+                      File(widget.message.imagePath!).existsSync())
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GestureDetector(
+                        onTap: () => showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.black,
+                            insetPadding: const EdgeInsets.all(8),
+                            child: InteractiveViewer(
+                              child: Image.file(File(widget.message.imagePath!)),
+                            ),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(widget.message.imagePath!),
+                            width: 220,
+                            fit: BoxFit.cover,
+                            cacheWidth: 440,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (widget.message.fileName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.picture_as_pdf_rounded,
+                              size: 18, color: Colors.white70),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(widget.message.fileName!,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12.5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (widget.message.text.isNotEmpty)
+                    Text(
+                      widget.message.text,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.5,
+                        height: 1.5,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -219,6 +277,27 @@ class _MessageBubbleState extends State<MessageBubble> {
                           ],
                         ],
                       ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ValueListenableBuilder<String?>(
+                            valueListenable: VoiceService.instance.speakingId,
+                            builder: (context, speaking, _) {
+                              final on = speaking == widget.message.id;
+                              return IconButton(
+                                icon: Icon(
+                                  on ? Icons.stop_circle_rounded : Icons.volume_up_rounded,
+                                  size: 17,
+                                  color: on ? AppTheme.accentEmerald : AppTheme.textMuted,
+                                ),
+                                tooltip: on ? 'Stop' : 'Listen',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: _handleSpeak,
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
                       IconButton(
                         icon: Icon(
                           _copied ? Icons.check_rounded : Icons.copy_rounded,
@@ -229,6 +308,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: _handleCopy,
+                      ),
+                        ],
                       ),
                     ],
                   ),
