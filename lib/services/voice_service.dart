@@ -22,7 +22,7 @@ class VoiceService {
   final AudioPlayer _player = AudioPlayer();
   int _run = 0;
 
-  static const int firstPiece = 90;
+  static const int firstPiece = 60;
   static const int nextPiece = 150;
   static const int maxPiece = 380;
 
@@ -133,8 +133,8 @@ class VoiceService {
       }
     } on VoiceException catch (e) {
       if (run == _run) onError?.call(e.message);
-    } catch (_) {
-      if (run == _run) onError?.call('Could not play the voice. Check your internet and try again.');
+    } catch (e) {
+      if (run == _run) onError?.call('Could not play the voice (${e.runtimeType}). Check your internet and try again.');
     } finally {
       if (run == _run) speakingId.value = null;
     }
@@ -152,12 +152,14 @@ class VoiceService {
   final AudioRecorder _recorder = AudioRecorder();
   final ValueNotifier<bool> recording = ValueNotifier<bool>(false);
   final ValueNotifier<bool> transcribing = ValueNotifier<bool>(false);
+  /// How loud the voice is right now, 0..1 (drives the listening animation).
+  final ValueNotifier<double> level = ValueNotifier<double>(0);
   Timer? _poll;
   String? _path;
 
   static const int maxSeconds = 40;
   static const double silenceDb = -42; // quieter than this counts as silence
-  static const int silenceStopMs = 2200; // stop after this much quiet once speech was heard
+  static const int silenceStopMs = 1400; // stop after this much quiet once speech was heard
 
   Future<bool> hasMicPermission() => _recorder.hasPermission();
 
@@ -176,9 +178,10 @@ class VoiceService {
     var heardSpeech = false;
     DateTime? quietSince;
     _poll?.cancel();
-    _poll = Timer.periodic(const Duration(milliseconds: 150), (t) async {
+    _poll = Timer.periodic(const Duration(milliseconds: 100), (t) async {
       if (!recording.value) return;
       final amp = await _recorder.getAmplitude();
+      level.value = ((amp.current + 55) / 45).clamp(0.0, 1.0);
       final now = DateTime.now();
       if (amp.current > silenceDb + 8) {
         heardSpeech = true;
@@ -195,6 +198,7 @@ class VoiceService {
 
   Future<void> cancelRecording() async {
     _poll?.cancel();
+    level.value = 0;
     recording.value = false;
     try {
       await _recorder.cancel();
@@ -215,6 +219,7 @@ class VoiceService {
   /// Stops the recording and returns the text the server heard. Throws [VoiceException] with a friendly message.
   Future<String> finishRecording({required String language}) async {
     _poll?.cancel();
+    level.value = 0;
     if (!recording.value) return '';
     recording.value = false;
     final path = await _recorder.stop() ?? _path;
@@ -246,8 +251,8 @@ class VoiceService {
       rethrow;
     } on TimeoutException {
       throw VoiceException('That took too long. Check your internet and try again.');
-    } catch (_) {
-      throw VoiceException('Voice typing failed. Check your internet and try again.');
+    } catch (e) {
+      throw VoiceException('Voice typing failed (${e.runtimeType}). Check your internet and try again.');
     } finally {
       transcribing.value = false;
       _deleteTemp();

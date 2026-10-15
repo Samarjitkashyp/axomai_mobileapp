@@ -103,6 +103,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final old = _inputController.text.trim();
       _inputController.text = old.isEmpty ? text : '$old $text';
       _inputController.selection = TextSelection.collapsed(offset: _inputController.text.length);
+      _handleSendMessage(); // spoken words go straight to the AI: no second tap
     } on VoiceException catch (e) {
       _snack(e.message);
     }
@@ -441,6 +442,61 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Widget _buildListeningStrip() {
+    final voice = VoiceService.instance;
+    final listening = voice.recording.value;
+    final busy = voice.transcribing.value;
+    if (!listening && !busy) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: (listening ? Colors.redAccent : AppTheme.accentPurple).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: (listening ? Colors.redAccent : AppTheme.accentPurple).withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          if (listening)
+            ValueListenableBuilder<double>(
+              valueListenable: voice.level,
+              builder: (_, v, __) => Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  for (final k in const [0.5, 0.9, 1.0, 0.8, 0.55, 0.9, 0.6])
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 110),
+                      width: 4,
+                      height: 6 + 24 * (v * k),
+                      margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(3)),
+                    ),
+                ],
+              ),
+            )
+          else
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accentPurple),
+            ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              listening ? 'Listening... speak now' : 'Understanding what you said...',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (listening)
+            TextButton(
+              onPressed: () => VoiceService.instance.cancelRecording(),
+              child: const Text('Cancel'),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAttachmentPreview() {
     if (_attachPath == null) return const SizedBox.shrink();
     return Container(
@@ -722,6 +778,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
 
             _buildAttachmentPreview(),
+            _buildListeningStrip(),
 
             // Bottom Floating Input Bar
             InputBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
 
 class InputBar extends StatelessWidget {
@@ -245,10 +246,20 @@ class InputBar extends StatelessWidget {
                     ),
 
                     // Mic (voice typing)
-                    Container(
+                    ValueListenableBuilder<double>(
+                     valueListenable: VoiceService.instance.level,
+                     builder: (context, lv, child) => Container(
                       width: 34,
                       height: 34,
                       margin: const EdgeInsets.only(right: 6),
+                      foregroundDecoration: listening
+                          ? BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.redAccent.withValues(alpha: 0.35 + 0.4 * lv),
+                                  width: 1 + 4 * lv),
+                            )
+                          : null,
                       decoration: BoxDecoration(
                         color: listening
                             ? Colors.redAccent.withValues(alpha: 0.2)
@@ -274,6 +285,7 @@ class InputBar extends StatelessWidget {
                         onPressed: (isLoading || transcribing) ? null : onMic,
                         tooltip: listening ? 'Stop' : 'Voice typing',
                       ),
+                     ),
                     ),
 
                     // Right Send Button
