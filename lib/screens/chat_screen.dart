@@ -57,7 +57,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     AuthService.currentUserNotifier.addListener(_onAuthChanged);
     StorageService.loadChatLanguage().then((v) {
-      if (mounted) setState(() => _language = v);
+      if (mounted) setState(() => _language = v == 'english' ? 'english' : 'assamese');
     });
     VoiceService.instance.recording.addListener(_onVoiceChanged);
     VoiceService.instance.transcribing.addListener(_onVoiceChanged);
@@ -72,7 +72,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   static const Map<String, String> _languageNames = {
     'assamese': 'Assamese',
-    'hinglish': 'Hinglish',
     'english': 'English',
   };
 
@@ -625,7 +624,7 @@ class _ChatScreenState extends State<ChatScreen> {
               bottomPadding: 8,
               languageLabel: _languageNames[_language] ?? 'Assamese',
               onLanguageChanged: (v) {
-                setState(() => _language = v);
+                setState(() => _language = v == 'english' ? 'english' : 'assamese');
                 StorageService.saveChatLanguage(v);
               },
               listening: VoiceService.instance.recording.value,

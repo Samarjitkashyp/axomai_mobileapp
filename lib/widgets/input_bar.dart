@@ -154,54 +154,6 @@ class InputBar extends StatelessWidget {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                       children: [
-                        // Assamese Transliteration Toggle Pill
-                        InkWell(
-                          onTap: onToggleTranslit,
-                          borderRadius: BorderRadius.circular(12),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isAssameseTranslit
-                                  ? AppTheme.accentEmerald.withOpacity(0.2)
-                                  : pillBg,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isAssameseTranslit
-                                    ? AppTheme.accentEmerald.withOpacity(0.6)
-                                    : pillBorder,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'অ',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isAssameseTranslit
-                                        ? AppTheme.accentEmerald
-                                        : textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isAssameseTranslit ? 'অসমীয়া ON' : 'অসমীয়া',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: isAssameseTranslit
-                                        ? AppTheme.accentEmerald
-                                        : textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-
                         // Web Search Toggle Pill
                         InkWell(
                           onTap: onToggleWebSearch,
@@ -255,7 +207,6 @@ class InputBar extends StatelessWidget {
                           onSelected: onLanguageChanged,
                           itemBuilder: (_) => const [
                             PopupMenuItem(value: 'assamese', child: Text('Assamese')),
-                            PopupMenuItem(value: 'hinglish', child: Text('Hinglish')),
                             PopupMenuItem(value: 'english', child: Text('English')),
                           ],
                           child: Container(

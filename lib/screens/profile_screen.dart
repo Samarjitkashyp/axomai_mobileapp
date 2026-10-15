@@ -45,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    StorageService.loadChatLanguage().then((v) { if (mounted) setState(() => _chatLanguage = v); });
+    StorageService.loadChatLanguage().then((v) { if (mounted) setState(() => _chatLanguage = v == 'english' ? 'english' : 'assamese'); });
     StorageService.loadVoice().then((v) { if (mounted) setState(() => _voice = v); });
     StorageService.loadVoiceSpeed().then((v) { if (mounted) setState(() => _voiceSpeed = v); });
     _nameController = TextEditingController();
@@ -880,7 +880,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'The language Axom AI answers in',
             trailing: _dropdown<String>(
               _chatLanguage,
-              const {'assamese': 'Assamese', 'hinglish': 'Hinglish', 'english': 'English'},
+              const {'assamese': 'Assamese', 'english': 'English'},
               (v) {
                 setState(() => _chatLanguage = v);
                 StorageService.saveChatLanguage(v);
