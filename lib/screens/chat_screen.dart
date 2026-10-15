@@ -10,6 +10,7 @@ import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/convert_intent.dart';
 import '../services/storage_service.dart';
 import '../services/voice_service.dart';
 import '../theme/app_theme.dart';
@@ -296,6 +297,23 @@ class _ChatScreenState extends State<ChatScreen> {
       imagePath: attachIsImage ? attachPath : null,
       fileName: (!attachIsImage && attachPath != null) ? attachName : null,
     );
+
+    // File conversion lives on the website: say so instead of asking the AI.
+    if (isFileConvertRequest(sentText)) {
+      setState(() {
+        session!.messages.add(userMessage);
+        session.messages.add(ChatMessage(
+          id: 'msg_${DateTime.now().millisecondsSinceEpoch + 1}',
+          role: 'assistant',
+          text: convertNotInAppMessage,
+          timestamp: DateTime.now(),
+        ));
+        _attachPath = null;
+      });
+      _saveState();
+      _scrollToBottom();
+      return;
+    }
 
     setState(() {
       session!.messages.add(userMessage);
