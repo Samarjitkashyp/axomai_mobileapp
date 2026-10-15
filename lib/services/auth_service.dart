@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'storage_service.dart';
@@ -283,6 +284,56 @@ class AuthService {
         'success': false,
         'error': 'Connection failed: ${e.toString()}',
       };
+    }
+  }
+
+  // The web client id of the Axom AI Google project: the server accepts Google tokens made for this id only.
+  static const String _googleWebClientId =
+      '514662966676-fo4atqrjblkn8sadd2t0enhqi5mch5aq.apps.googleusercontent.com';
+  static bool _googleReady = false;
+
+  /// Signs in (or creates the account) with Google. The server checks the Google token and opens a normal session.
+  static Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      if (!_googleReady) {
+        await GoogleSignIn.instance.initialize(serverClientId: _googleWebClientId);
+        _googleReady = true;
+      }
+      final account = await GoogleSignIn.instance.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        return {'success': false, 'error': 'Google did not give a sign-in token. Please try again.'};
+      }
+
+      final baseUrl = await StorageService.loadApiBaseUrl();
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/auth/google/'),
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode({'credential': idToken}),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200 || data['success'] != true) {
+        return {'success': false, 'error': data['error'] ?? 'Google sign-in failed.'};
+      }
+      final rawCookies = response.headers['set-cookie'];
+      final match = rawCookies == null ? null : RegExp(r'sessionid=([^;]+)').firstMatch(rawCookies);
+      if (match == null) {
+        return {'success': false, 'error': 'Signed in with Google but the server gave no session. Please try again.'};
+      }
+      await _saveSessionCookie('sessionid=${match.group(1)}');
+      final user = AuthUser.fromJson(data);
+      await saveUser(user);
+      return {'success': true, 'user': user};
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return {'success': false, 'cancelled': true};
+      }
+      return {'success': false, 'error': 'Google sign-in failed (${e.code.name}). Please try again.'};
+    } catch (e) {
+      return {'success': false, 'error': 'Google sign-in failed: $e'};
     }
   }
 

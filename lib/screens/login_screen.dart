@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../services/auth_service.dart';
+import '../widgets/google_logo.dart';
 import '../theme/app_theme.dart';
 import '../widgets/glowing_orb.dart';
 import 'loading_splash_screen.dart';
@@ -75,6 +76,23 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       Navigator.pop(context);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMsg = null;
+    });
+    final res = await AuthService.loginWithGoogle();
+    if (!mounted) return;
+    if (res['success'] == true) {
+      _onSuccessNavigate(res['user'] as AuthUser?);
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMsg = res['cancelled'] == true ? null : res['error'] as String?;
+      });
     }
   }
 
@@ -215,6 +233,57 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+
+                  // Google sign-in: a real one, the server checks the Google token and opens a session
+                  InkWell(
+                    onTap: _isLoading ? null : _handleGoogleSignIn,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GoogleLogo(size: 22),
+                          SizedBox(width: 12),
+                          Text(
+                            'Continue with Google',
+                            style: TextStyle(
+                              color: Color(0xFF1F2937),
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      const Expanded(child: Divider(color: AppTheme.borderColor)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: Text(
+                          'OR',
+                          style: TextStyle(
+                            color: AppTheme.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider(color: AppTheme.borderColor)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
 
                   // Error Banner
                   if (_errorMsg != null) ...[
