@@ -561,7 +561,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
 
         // Auto-stop after 1.2s silence once speech is detected
         if (quietSince != null &&
-            now.difference(quietSince!).inMilliseconds >= 2400) {
+            now.difference(quietSince!).inMilliseconds >= 750) {
           timer.cancel();
           _stopListeningAndProcess();
           return;

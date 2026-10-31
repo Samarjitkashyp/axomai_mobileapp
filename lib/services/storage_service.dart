@@ -96,4 +96,18 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('axom_ai_voice_speed', v);
   }
+
+  // Device unique identifier for rate limiting & security
+  static const String _deviceIdKey = 'axom_ai_device_id';
+
+  static Future<String> getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? id = prefs.getString(_deviceIdKey);
+    if (id == null || id.isEmpty) {
+      final micros = DateTime.now().microsecondsSinceEpoch;
+      id = 'dev_$micros';
+      await prefs.setString(_deviceIdKey, id);
+    }
+    return id;
+  }
 }

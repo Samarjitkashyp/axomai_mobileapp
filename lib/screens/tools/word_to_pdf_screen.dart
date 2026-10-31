@@ -4,6 +4,8 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
+import '../../services/download_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -42,6 +44,10 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
   String _progressMsg = '';
   String? _errorMessage;
   FileConversionResult? _result;
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  String _downloadStatusMsg = '';
+  DownloadResult? _downloadResult;
 
   Timer? _timer1;
   Timer? _timer2;
@@ -97,6 +103,10 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
       _errorMessage = null;
       _result = null;
       _progressMsg = '';
+      _isDownloading = false;
+      _downloadProgress = 0.0;
+      _downloadStatusMsg = '';
+      _downloadResult = null;
     });
   }
 
@@ -273,6 +283,151 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
         _progressMsg = '';
       });
     }
+  }
+
+  Future<void> _handleDownloadAndSave() async {
+    if (_result == null || _result!.downloadUrl == null) return;
+
+    final targetName = _result!.outputName ??
+        (_result!.isBatch
+            ? 'axom_batch_documents.zip'
+            : '${_selectedFiles.isNotEmpty ? _selectedFiles[0].name.replaceAll(RegExp(r'\.[^/.]+$'), '') : "converted_document"}.pdf');
+
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.05;
+      _downloadStatusMsg = 'Starting download...';
+    });
+
+    // Step 1: Download into app canonical storage (exempt from Scoped Storage restrictions)
+    final res = await DownloadService.downloadToAppStorage(
+      rawUrl: _result!.downloadUrl!,
+      preferredFilename: targetName,
+      onProgress: (prog, status) {
+        if (mounted) {
+          setState(() {
+            _downloadProgress = prog;
+            _downloadStatusMsg = status;
+          });
+        }
+      },
+    );
+
+    if (!mounted) return;
+
+    if (!res.success || res.filePath == null) {
+      setState(() {
+        _isDownloading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.error ?? 'Could not download document.'),
+          backgroundColor: AppTheme.errorRed,
+          action: SnackBarAction(
+            label: 'Drive View',
+            textColor: Colors.white,
+            onPressed: () {
+              if (_result?.downloadUrl != null) {
+                DownloadService.openInGoogleDriveViewer(_result!.downloadUrl!);
+              }
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isDownloading = false;
+      _downloadResult = res;
+    });
+
+    // Step 2: Open DEFAULT ANDROID SYSTEM MODAL (Storage Access Framework)
+    // Asks the user WHERE they want to save the document (Downloads, Documents, Drive, SD Card)
+    final savedPath = await DownloadService.promptNativeSaveDialog(
+      filePath: res.filePath!,
+      fileName: targetName,
+      isBatch: _result!.isBatch,
+    );
+
+    if (!mounted) return;
+
+    if (savedPath != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded,
+                  color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('Saved: $targetName'),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.successGreen,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Open',
+            textColor: Colors.white,
+            onPressed: _handleOpenPdf,
+          ),
+        ),
+      );
+    } else {
+      // User cancelled system save dialog, but file is downloaded and ready in app cache
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('File ready: $targetName'),
+          backgroundColor: AppTheme.accentPurple,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Open',
+            textColor: Colors.white,
+            onPressed: _handleOpenPdf,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleOpenPdf() async {
+    final dlUrl = _result?.downloadUrl ?? '';
+    final filePath = _downloadResult?.filePath;
+
+    if (filePath == null) {
+      if (dlUrl.isNotEmpty) {
+        await DownloadService.openInGoogleDriveViewer(dlUrl);
+      }
+      return;
+    }
+
+    // Default Android system "Open with..." app chooser (Adobe Acrobat, Chrome, Drive, WPS)
+    final openRes = await DownloadService.openFile(filePath);
+
+    if (openRes.type != ResultType.done && mounted) {
+      // Fallback directly to Google Drive Cloud Viewer if no local PDF reader is installed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No PDF reader app found on device. Opening in Google Drive Viewer...',
+          ),
+          backgroundColor: AppTheme.accentPurple,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      if (dlUrl.isNotEmpty) {
+        await DownloadService.openInGoogleDriveViewer(dlUrl);
+      }
+    }
+  }
+
+  Future<void> _handleShareFile() async {
+    if (_downloadResult?.filePath == null) return;
+    await DownloadService.shareFile(
+      _downloadResult!.filePath!,
+      text: 'Converted with Axom AI Word to PDF',
+    );
   }
 
   Future<void> _openDownloadUrl(String? url) async {
@@ -501,13 +656,23 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Text(
-                              '• Upgrade',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.accentPink,
-                                decoration: TextDecoration.underline,
+                            Container(
+                              margin: const EdgeInsets.only(left: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color:
+                                    AppTheme.accentPink.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Upgrade',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentPink,
+                                  decoration: TextDecoration.none,
+                                ),
                               ),
                             ),
                           ],
@@ -754,49 +919,242 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.accentPurple,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                    if (_isDownloading) ...[
+                      // LIVE DOWNLOADING STATE
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentPurple.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppTheme.accentPurple.withValues(alpha: 0.25)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppTheme.accentPurple),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _downloadStatusMsg,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${(_downloadProgress * 100).toInt()}%',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.accentPurple,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: _downloadProgress,
+                                backgroundColor:
+                                    AppTheme.accentPurple.withValues(alpha: 0.15),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppTheme.accentPurple),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (_downloadResult != null && _downloadResult!.success) ...[
+                      // DOWNLOAD COMPLETE BANNER & BIG COMPANY ACTION BUTTONS
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: AppTheme.successGreen.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded,
+                                color: AppTheme.successGreen, size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Saved to Device Downloads',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.successGreen,
+                                    ),
+                                  ),
+                                  Text(
+                                    '📁 ${_downloadResult!.filename} (${_downloadResult!.formattedSize})',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.accentPurple,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.visibility_rounded,
+                                  size: 18, color: Colors.white),
+                              label: const Text(
+                                'Open PDF',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onPressed: _handleOpenPdf,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1F2238),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: const BorderSide(
+                                      color: AppTheme.borderColor),
+                                ),
+                              ),
+                              icon: const Icon(Icons.add_to_drive_rounded,
+                                  size: 18, color: Colors.amber),
+                              label: const Text(
+                                'Drive',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onPressed: () {
+                                if (_result?.downloadUrl != null) {
+                                  DownloadService.openInGoogleDriveViewer(
+                                      _result!.downloadUrl!);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1F2238),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.borderColor),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.share_rounded,
+                                  size: 18, color: AppTheme.accentCyan),
+                              tooltip: 'Share',
+                              onPressed: _handleShareFile,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppTheme.borderColor),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size.fromHeight(44),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _resetAll,
+                        child: const Text('Convert Another Document',
+                            style: TextStyle(
+                                fontSize: 12.5,
+                                color: AppTheme.textSecondary)),
+                      ),
+                    ] else ...[
+                      // INITIAL STATE: DOWNLOAD TO DEVICE
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.accentPurple,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.download_rounded,
+                                  size: 18, color: Colors.white),
+                              label: Text(
+                                _result!.isBatch
+                                    ? 'Download All (ZIP)'
+                                    : 'Download Converted PDF',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onPressed: _handleDownloadAndSave,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppTheme.borderColor),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14, horizontal: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                             ),
-                            icon: const Icon(Icons.download_rounded,
-                                size: 18, color: Colors.white),
-                            label: Text(
-                              _result!.isBatch
-                                  ? 'Download All (ZIP)'
-                                  : 'Download Converted PDF',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            onPressed: () =>
-                                _openDownloadUrl(_result!.downloadUrl),
+                            onPressed: _resetAll,
+                            child: const Text('New',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.textSecondary)),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppTheme.borderColor),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 14, horizontal: 16),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: _resetAll,
-                          child: const Text('New',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.textSecondary)),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1102,57 +1460,39 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
               ),
             ],
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // Trust Details Grid
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTrustItem(
-                    icon: Icons.shield_outlined,
-                    color: AppTheme.successGreen,
-                    title: 'Free: 20/Day',
-                    subtitle: 'Clean PDF output',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildTrustItem(
-                    icon: Icons.workspace_premium_rounded,
-                    color: Colors.amber,
-                    title: 'Pro Batch',
-                    subtitle: '20 files at once',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _buildTrustItem(
-                    icon: Icons.lock_outline_rounded,
-                    color: AppTheme.accentPink,
-                    title: 'Private & Secure',
-                    subtitle: 'Auto-purged',
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Key Features List
-            const Text(
-              'Why Axom AI Word to PDF',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
-              ),
+            // Trust Details Cards (1 card per row for clean, neat mobile UI)
+            _buildTrustItem(
+              icon: Icons.shield_outlined,
+              color: AppTheme.successGreen,
+              title: 'Free: 20 Files / Day',
+              subtitle:
+                  '100% original fonts, tables, margins & zero watermarks',
+              badge: 'Free Tier',
+              badgeColor: AppTheme.successGreen,
             ),
             const SizedBox(height: 10),
-            _buildFeatureTile(
-                'Lossless layout fidelity for tables, fonts & margins'),
-            _buildFeatureTile(
-                'Zero watermarks, completely clean professional output'),
-            _buildFeatureTile('High-speed conversion engine direct from cloud'),
+            _buildTrustItem(
+              icon: Icons.workspace_premium_rounded,
+              color: Colors.amber,
+              title: 'Pro Batch Mode',
+              subtitle:
+                  'Convert up to 20 documents simultaneously with 1-click ZIP',
+              badge: 'PRO',
+              badgeColor: Colors.amber,
+            ),
+            const SizedBox(height: 10),
+            _buildTrustItem(
+              icon: Icons.lock_outline_rounded,
+              color: AppTheme.accentPurple,
+              title: 'Private & Secure Processing',
+              subtitle:
+                  'TLS 1.3 encrypted transfer with instantaneous automatic purge',
+              badge: 'Secure',
+              badgeColor: AppTheme.accentPurple,
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -1222,53 +1562,74 @@ class _WordToPdfScreenState extends State<WordToPdfScreen> {
     required Color color,
     required String title,
     required String subtitle,
+    String? badge,
+    Color? badgeColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.borderColor),
       ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 9.5, color: AppTheme.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureTile(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_rounded,
-              color: AppTheme.successGreen, size: 15),
-          const SizedBox(width: 10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withValues(alpha: 0.25)),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                  fontSize: 12, color: AppTheme.textSecondary),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ),
+          if (badge != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (badgeColor ?? color).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: (badgeColor ?? color).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: badgeColor ?? color,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

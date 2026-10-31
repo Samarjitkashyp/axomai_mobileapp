@@ -68,32 +68,19 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
     'hindi': 'हिन्दी (Hindi)',
   };
 
-  final List<Map<String, dynamic>> _modes = [
-    {
-      'id': 'study',
-      'label': 'Study Notes',
-      'icon': Icons.school_rounded,
-      'color': Color(0xFF8B5CF6),
-    },
-    {
-      'id': 'meeting',
-      'label': 'Meeting Minutes',
-      'icon': Icons.business_center_rounded,
-      'color': Color(0xFF06B6D4),
-    },
-    {
-      'id': 'ideas',
-      'label': 'Brainstorm',
-      'icon': Icons.lightbulb_rounded,
-      'color': Color(0xFFF59E0B),
-    },
-    {
-      'id': 'summary',
-      'label': 'Summary',
-      'icon': Icons.bolt_rounded,
-      'color': Color(0xFF10B981),
-    },
-  ];
+  String _getModeBadge() {
+    switch (_synthesisMode) {
+      case 'meeting':
+        return 'MEETING';
+      case 'ideas':
+        return 'BRAINSTORM';
+      case 'summary':
+        return 'SUMMARY';
+      case 'study':
+      default:
+        return 'STUDY NOTES';
+    }
+  }
 
   @override
   void initState() {
@@ -555,12 +542,16 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
           children: [
             Row(
               children: [
-                Text(
-                  'Voice Notes Generator',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
+                Flexible(
+                  child: Text(
+                    'Voice Notes Generator',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -573,10 +564,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
                     color: const Color(0xFF10B981).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'VOICE AI',
-                    style: TextStyle(
-                      fontSize: 9.5,
+                  child: Text(
+                    _getModeBadge(),
+                    style: const TextStyle(
+                      fontSize: 9,
                       fontWeight: FontWeight.w800,
                       color: Color(0xFF10B981),
                     ),
@@ -585,7 +576,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
               ],
             ),
             const Text(
-              'বাণীৰ পৰা নিখুঁত টোকা • Real-time Speech-to-Text',
+              'Real-time Speech-to-Text & Notes',
               style: TextStyle(fontSize: 11, color: AppTheme.accentEmerald),
             ),
           ],
@@ -1265,48 +1256,6 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Mode Selection Chips (Study, Meeting, Ideas, Summary)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _modes.map((m) {
-                final isSelected = _synthesisMode == m['id'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    avatar: Icon(
-                      m['icon'] as IconData,
-                      size: 14,
-                      color: isSelected ? Colors.white : (m['color'] as Color),
-                    ),
-                    label: Text(m['label'] as String),
-                    selected: isSelected,
-                    onSelected: (val) {
-                      if (val) setState(() => _synthesisMode = m['id']);
-                    },
-                    selectedColor: m['color'] as Color,
-                    labelStyle: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: isSelected ? Colors.white : textSecondary,
-                    ),
-                    backgroundColor: isDark
-                        ? const Color(0xFF1E293B)
-                        : const Color(0xFFF1F5F9),
-                    side: BorderSide(
-                      color: isSelected ? (m['color'] as Color) : borderColor,
-                      width: 0.6,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
           // Main Controls Row: Synthesize AI | Big Pulsing Mic | Export Word
           Row(
             children: [
@@ -1502,7 +1451,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Continuous Dictation (অনবৰত বাক্য গ্ৰহণ)',
+                      'Continuous Dictation Mode',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,

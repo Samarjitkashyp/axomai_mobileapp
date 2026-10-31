@@ -18,6 +18,11 @@ class FileConversionResult {
   final String? error;
   final bool isBatch;
   final int count;
+  final bool limitReached;
+  final int? dailyLimit;
+  final int? used;
+  final double? savedPercent;
+  final int? origSizeBytes;
 
   FileConversionResult({
     required this.success,
@@ -29,6 +34,11 @@ class FileConversionResult {
     this.error,
     this.isBatch = false,
     this.count = 1,
+    this.limitReached = false,
+    this.dailyLimit,
+    this.used,
+    this.savedPercent,
+    this.origSizeBytes,
   });
 }
 
@@ -568,6 +578,7 @@ class ApiService {
   static Future<FileConversionResult> convertFile({
     required List<PlatformFile> files,
     String target = 'pdf',
+    String? quality,
   }) async {
     if (files.isEmpty) {
       return FileConversionResult(
@@ -582,7 +593,13 @@ class ApiService {
     try {
       final request = http.MultipartRequest('POST', url);
       request.fields['target'] = target;
+      if (quality != null && quality.isNotEmpty) {
+        request.fields['quality'] = quality;
+      }
       request.headers['Accept'] = 'application/json, */*';
+
+      final deviceId = await StorageService.getDeviceId();
+      request.headers['X-Device-Id'] = deviceId;
 
       final sessionCookie = await AuthService.getSessionCookie();
       if (sessionCookie != null && sessionCookie.isNotEmpty) {
@@ -631,6 +648,12 @@ class ApiService {
             message: data['message'],
             isBatch: isBatch,
             count: files.length,
+            savedPercent: (data['saved_percent'] is num)
+                ? (data['saved_percent'] as num).toDouble()
+                : null,
+            origSizeBytes: (data['orig_size_bytes'] is num)
+                ? (data['orig_size_bytes'] as num).toInt()
+                : null,
           );
         } else {
           return FileConversionResult(
@@ -893,7 +916,8 @@ class ApiService {
   // ─── 12. VIDEO COMPRESSOR & DOWNLOADER ────────────────────────────
   static Future<Map<String, dynamic>> uploadVideoCompress({
     required PlatformFile file,
-    String targetQuality = 'medium',
+    String preset = 'whatsapp',
+    String? targetQuality,
   }) async {
     final baseUrl = await StorageService.loadApiBaseUrl();
     final url = Uri.parse('$baseUrl/api/video-compress/upload/');
@@ -903,7 +927,23 @@ class ApiService {
       final sessionCookie = await AuthService.getSessionCookie();
       if (sessionCookie != null) request.headers['Cookie'] = sessionCookie;
 
-      request.fields['quality'] = targetQuality;
+      final deviceId = await StorageService.getDeviceId();
+      request.headers['X-Device-Id'] = deviceId;
+
+      String selectedPreset = preset;
+      if (targetQuality != null && targetQuality.isNotEmpty) {
+        if (targetQuality == 'low') {
+          selectedPreset = 'email';
+        } else if (targetQuality == 'high') {
+          selectedPreset = 'youtube';
+        } else {
+          selectedPreset = 'whatsapp';
+        }
+      }
+
+      request.fields['preset'] = selectedPreset;
+      request.fields['quality'] = selectedPreset;
+
       if (file.bytes != null) {
         request.files.add(http.MultipartFile.fromBytes('video', file.bytes!, filename: file.name));
       } else if (file.path != null) {
@@ -912,7 +952,11 @@ class ApiService {
 
       final streamed = await request.send().timeout(const Duration(seconds: 180));
       final respStr = await streamed.stream.bytesToString();
-      return jsonDecode(respStr) as Map<String, dynamic>;
+      final decoded = jsonDecode(respStr) as Map<String, dynamic>;
+      if (streamed.statusCode == 402 || decoded['upgrade_required'] == true) {
+        decoded['upgrade_required'] = true;
+      }
+      return decoded;
     } catch (e) {
       return {'success': false, 'error': e.toString()};
     }
