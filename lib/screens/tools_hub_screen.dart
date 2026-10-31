@@ -59,6 +59,9 @@ class ToolsHubScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgCol = isDark ? AppTheme.bgDark : const Color(0xFFF8FAFC);
     final cardBg = isDark ? AppTheme.bgCard : Colors.white;
+    final innerTileBg = isDark
+        ? const Color(0xFF13172E)
+        : const Color(0xFFF8FAFC);
     final borderCol = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
     final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
     final textSecondary = isDark
@@ -94,7 +97,7 @@ class ToolsHubScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── SECTION TITLE: FEATURED TOOL ──────────────────────────────────
+            // ─── SECTION HEADER ───────────────────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -129,11 +132,11 @@ class ToolsHubScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // ─── 1. VOICE NOTES GENERATOR PRIMARY CARD (CLASSIC TOOLS STYLE) ───
+            // ─── UNIFIED VOICE NOTES GENERATOR CARD (WITH 4 STYLES INSIDE) ────
             Container(
               decoration: BoxDecoration(
                 color: cardBg,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: const Color(0xFF10B981).withValues(alpha: 0.35),
                   width: 1.2,
@@ -141,230 +144,52 @@ class ToolsHubScreen extends StatelessWidget {
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                    blurRadius: 16,
+                    blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _openVoiceNotes(context),
-                  borderRadius: BorderRadius.circular(18),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Tool Icon
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF10B981,
-                            ).withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(
-                                0xFF10B981,
-                              ).withValues(alpha: 0.35),
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.keyboard_voice_rounded,
-                            color: Color(0xFF10B981),
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-
-                        // Title, Subtitle, Description
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      'Voice Notes Generator',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: textPrimary,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 2.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF10B981,
-                                      ).withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Text(
-                                      'PRO ⭐',
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF10B981),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 3),
-                              const Text(
-                                'Speech to Structured Text & Notes',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF10B981),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Dictate in real-time in Assamese, English, or Hindi. Auto-type, synthesize chapter notes, and export to Word.',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  height: 1.45,
-                                  color: textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 14,
-                          color: textSecondary.withValues(alpha: 0.6),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ─── 2. TEMPLATES SECTION HEADER ──────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Voice Note Templates',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Select a template to start dictating',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: borderCol.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '4 STYLES',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // ─── THE 4 TEMPLATE BUTTONS (STUDY, MEETING, IDEAS, SUMMARY) ───────
-            Column(
-              children: _noteTemplates.map((template) {
-                final color = template['color'] as Color;
-                final badge = template['badge'] as String;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: borderCol),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: isDark ? 0.2 : 0.03,
-                        ),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Material(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Primary Card Header (Tappable to launch generator)
+                  Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => _openVoiceNotes(
-                        context,
-                        mode: template['id'] as String,
+                      onTap: () => _openVoiceNotes(context),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
-                      borderRadius: BorderRadius.circular(16),
                       child: Padding(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(16),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Icon Box
+                            // Tool Icon Box
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12),
+                                color: const Color(
+                                  0xFF10B981,
+                                ).withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: color.withValues(alpha: 0.28),
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.35),
                                 ),
                               ),
-                              child: Icon(
-                                template['icon'] as IconData,
-                                color: color,
-                                size: 22,
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.keyboard_voice_rounded,
+                                color: Color(0xFF10B981),
+                                size: 26,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 14),
 
-                            // Text Column
+                            // Title, Subtitle, Description
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,9 +200,9 @@ class ToolsHubScreen extends StatelessWidget {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          template['title'] as String,
+                                          'Voice Notes Generator',
                                           style: TextStyle(
-                                            fontSize: 14.5,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                             color: textPrimary,
                                           ),
@@ -385,57 +210,253 @@ class ToolsHubScreen extends StatelessWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
+                                          horizontal: 7,
+                                          vertical: 2.5,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: color.withValues(alpha: 0.12),
+                                          color: const Color(
+                                            0xFF10B981,
+                                          ).withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                         ),
-                                        child: Text(
-                                          badge,
+                                        child: const Text(
+                                          'PRO ⭐',
                                           style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w800,
-                                            color: color,
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF10B981),
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    template['description'] as String,
+                                  const SizedBox(height: 3),
+                                  const Text(
+                                    'Speech to Structured Text & Notes',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      height: 1.4,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Dictate in real-time in Assamese, English, or Hindi. Auto-type, synthesize notes, and export to Word.',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      height: 1.45,
                                       color: textSecondary,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Icon(
                               Icons.arrow_forward_ios_rounded,
-                              size: 13,
-                              color: textSecondary.withValues(alpha: 0.5),
+                              size: 14,
+                              color: textSecondary.withValues(alpha: 0.6),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                );
-              }).toList(),
+
+                  // Divider between Card Header & the 4 Styles
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: borderCol.withValues(alpha: 0.8),
+                    ),
+                  ),
+
+                  // 2. The 4 Styles Section inside the Card
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Select Note Style',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: textPrimary,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: borderCol.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '4 STYLES',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // The 4 Style Tiles
+                        ..._noteTemplates.map((template) {
+                          final color = template['color'] as Color;
+                          final badge = template['badge'] as String;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: innerTileBg,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: borderCol),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _openVoiceNotes(
+                                  context,
+                                  mode: template['id'] as String,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      // Style Icon Box
+                                      Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: BoxDecoration(
+                                          color: color.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          border: Border.all(
+                                            color: color.withValues(
+                                              alpha: 0.28,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          template['icon'] as IconData,
+                                          color: color,
+                                          size: 19,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+
+                                      // Style Title, Badge, Description
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    template['title'] as String,
+                                                    style: TextStyle(
+                                                      fontSize: 13.5,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: textPrimary,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: color.withValues(
+                                                      alpha: 0.12,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    badge,
+                                                    style: TextStyle(
+                                                      fontSize: 8.5,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: color,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              template['description'] as String,
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                height: 1.35,
+                                                color: textSecondary,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.arrow_forward_ios_rounded,
+                                        size: 12,
+                                        color: textSecondary.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
 
             // ─── PRO FEATURES INFO PILLS ──────────────────────────────────────
             Container(
