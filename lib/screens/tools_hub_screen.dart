@@ -98,143 +98,174 @@ class ToolsHubScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── HERO SHOWCASE BANNER ──────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [const Color(0xFF064E3B), const Color(0xFF0F172A)]
-                      : [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            // ─── SECTION TITLE: FEATURED TOOL ──────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Featured Tool',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(22),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'AI VOICE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // ─── 1. VOICE NOTES GENERATOR PRIMARY CARD (CLASSIC TOOLS STYLE) ───
+            Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: const Color(
-                    0xFF10B981,
-                  ).withValues(alpha: isDark ? 0.35 : 0.4),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(
-                      0xFF10B981,
-                    ).withValues(alpha: isDark ? 0.2 : 0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF10B981,
-                          ).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openVoiceNotes(context),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tool Icon
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
                             color: const Color(
                               0xFF10B981,
-                            ).withValues(alpha: 0.35),
+                            ).withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF10B981,
+                              ).withValues(alpha: 0.35),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.keyboard_voice_rounded,
+                            color: Color(0xFF10B981),
+                            size: 26,
                           ),
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.mic_rounded,
-                              color: Color(0xFF10B981),
-                              size: 14,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'AI VOICE DICTATION & NOTES',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF10B981),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Voice Notes Generator',
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      color: textPrimary,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'কণ্ঠধ্বনিৰ পৰা স্বয়ংক্ৰিয় লিখিত টোকা',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF10B981),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Dictate naturally in Assamese, English, or Hindi. Speak your thoughts and watch words type automatically in real-time, synthesize into clean chapter notes, and export to Microsoft Word (.docx).',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
+                        const SizedBox(width: 14),
 
-                  // Big CTA Button to launch Voice Notes
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openVoiceNotes(context),
-                      icon: const Icon(
-                        Icons.mic_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      label: const Text(
-                        'Start Voice Notes Generator',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        // Title, Assamese Subtitle, Description
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Voice Notes Generator',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: textPrimary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'PRO ⭐',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF10B981),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                'কণ্ঠধ্বনিৰ পৰা স্বয়ংক্ৰিয় লিখিত টোকা',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF10B981),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Dictate in real-time in Assamese, English, or Hindi. Auto-type, synthesize chapter notes, and export to Word.',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.45,
+                                  color: textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: textSecondary.withValues(alpha: 0.6),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
 
             const SizedBox(height: 28),
 
-            // ─── TEMPLATES SECTION HEADER ──────────────────────────────────────
+            // ─── 2. TEMPLATES SECTION HEADER ──────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -242,14 +273,14 @@ class ToolsHubScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose Note Template',
+                      'Voice Note Templates',
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       'নোটৰ আৰ্হি নিৰ্বাচন কৰি কওক',
                       style: TextStyle(
@@ -262,17 +293,17 @@ class ToolsHubScreen extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 4,
+                    horizontal: 8,
+                    vertical: 3,
                   ),
                   decoration: BoxDecoration(
                     color: borderCol.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '4 STYLES',
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: textSecondary,
                     ),
@@ -281,7 +312,7 @@ class ToolsHubScreen extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             // ─── THE 4 TEMPLATE BUTTONS (STUDY, MEETING, IDEAS, SUMMARY) ───────
             Column(
@@ -290,120 +321,128 @@ class ToolsHubScreen extends StatelessWidget {
                 final badge = template['badge'] as String;
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 14),
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: cardBg,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: borderCol),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(
                           alpha: isDark ? 0.2 : 0.03,
                         ),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: InkWell(
-                    onTap: () => _openVoiceNotes(
-                      context,
-                      mode: template['id'] as String,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Icon Container
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: color.withValues(alpha: 0.28),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _openVoiceNotes(
+                        context,
+                        mode: template['id'] as String,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Icon Box
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: color.withValues(alpha: 0.28),
+                                ),
+                              ),
+                              child: Icon(
+                                template['icon'] as IconData,
+                                color: color,
+                                size: 22,
                               ),
                             ),
-                            child: Icon(
-                              template['icon'] as IconData,
-                              color: color,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
+                            const SizedBox(width: 12),
 
-                          // Text Content
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            template['title'] as String,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: textPrimary,
-                                            ),
+                            // Text Column (Fully constrained to prevent any RenderFlex overflow)
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          template['title'] as String,
+                                          style: TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: textPrimary,
                                           ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            '(${template['assamese']})',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color: textSecondary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: color.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        badge,
-                                        style: TextStyle(
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.w800,
-                                          color: color,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  template['description'] as String,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    height: 1.4,
-                                    color: textSecondary,
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: color.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          badge,
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w800,
+                                            color: color,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    template['assamese'] as String,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: color,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    template['description'] as String,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      height: 1.4,
+                                      color: textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 14,
-                            color: textSecondary.withValues(alpha: 0.6),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 13,
+                              color: textSecondary.withValues(alpha: 0.5),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -428,10 +467,10 @@ class ToolsHubScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.verified_rounded,
                         size: 16,
-                        color: const Color(0xFF10B981),
+                        color: Color(0xFF10B981),
                       ),
                       const SizedBox(width: 6),
                       Text(
