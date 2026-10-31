@@ -186,7 +186,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         if (audioB64 != null && audioB64.isNotEmpty) {
           final audioBytes = base64Decode(audioB64);
           await _player.play(BytesSource(audioBytes));
-          await _player.setPlaybackRate(1.05);
+          await _player.setPlaybackRate(1.0);
         } else {
           Timer(const Duration(seconds: 3), () {
             if (mounted && _state == AssistantVoiceState.speaking) {
@@ -229,7 +229,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         if (audioB64 != null && audioB64.isNotEmpty) {
           final audioBytes = base64Decode(audioB64);
           await _player.play(BytesSource(audioBytes));
-          await _player.setPlaybackRate(1.05);
+          await _player.setPlaybackRate(1.0);
         } else {
           Timer(const Duration(seconds: 4), () {
             if (mounted && _state == AssistantVoiceState.speaking) {
@@ -289,7 +289,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         if (audioB64 != null && audioB64.isNotEmpty) {
           final audioBytes = base64Decode(audioB64);
           await _player.play(BytesSource(audioBytes));
-          await _player.setPlaybackRate(1.05);
+          await _player.setPlaybackRate(1.0);
         } else {
           // Fallback timer if no audio bytes
           Timer(const Duration(seconds: 4), () {
@@ -346,7 +346,7 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
       if (audioB64 != null && audioB64.isNotEmpty) {
         final audioBytes = base64Decode(audioB64);
         await _player.play(BytesSource(audioBytes));
-        await _player.setPlaybackRate(1.05);
+        await _player.setPlaybackRate(1.0);
       } else {
         Timer(const Duration(seconds: 4), () {
           if (mounted && _state == AssistantVoiceState.speaking) {
@@ -444,14 +444,14 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
         }
 
         // Auto-stop after 1.2s silence once speech is detected
-        if (quietSince != null && now.difference(quietSince!).inMilliseconds >= 1200) {
+        if (quietSince != null && now.difference(quietSince!).inMilliseconds >= 2400) {
           timer.cancel();
           _stopListeningAndProcess();
           return;
         }
 
         // Safety max duration: auto-process after 8.5 seconds
-        if (now.difference(startedAt).inMilliseconds >= 8500 && heardSpeech) {
+        if (now.difference(startedAt).inMilliseconds >= 35000 && heardSpeech) {
           timer.cancel();
           _stopListeningAndProcess();
           return;
