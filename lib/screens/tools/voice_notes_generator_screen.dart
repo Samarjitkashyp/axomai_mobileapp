@@ -11,27 +11,33 @@ import '../../services/voice_service.dart';
 import '../../theme/app_theme.dart';
 
 class VoiceNotesGeneratorScreen extends StatefulWidget {
-  const VoiceNotesGeneratorScreen({super.key});
+  final String initialMode;
+  const VoiceNotesGeneratorScreen({super.key, this.initialMode = 'study'});
 
   @override
-  State<VoiceNotesGeneratorScreen> createState() => _VoiceNotesGeneratorScreenState();
+  State<VoiceNotesGeneratorScreen> createState() =>
+      _VoiceNotesGeneratorScreenState();
 }
 
-class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> with SingleTickerProviderStateMixin {
-  final TextEditingController _titleController =
-      TextEditingController(text: 'Spoken Transcript (কথোপকথনৰ টোকা)');
+class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
+    with SingleTickerProviderStateMixin {
+  final TextEditingController _titleController = TextEditingController(
+    text: 'Spoken Transcript (কথোপকথনৰ টোকা)',
+  );
   final TextEditingController _transcriptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   // Language & Mode
-  String _spokenLanguage = 'assamese'; // 'assamese', 'english', 'hindi', 'hinglish'
+  String _spokenLanguage =
+      'assamese'; // 'assamese', 'english', 'hindi', 'hinglish'
   String _targetLanguage = 'same'; // 'same', 'assamese', 'english', 'hindi'
   String _synthesisMode = 'study'; // 'study', 'meeting', 'ideas', 'summary'
 
   // Recording & Processing States
   bool _isListening = false;
   bool _isProcessing = false;
-  bool _isContinuousMode = true; // Auto-resume listening after sentence transcription
+  bool _isContinuousMode =
+      true; // Auto-resume listening after sentence transcription
   bool _isSynthesizing = false;
   bool _isExporting = false;
   String _statusMessage = '';
@@ -43,7 +49,8 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
   // Synthesized Note Results
   String _structuredMarkdown = '';
   String _summarySnippet = '';
-  int _selectedTabIndex = 0; // 0: Live Transcript Editor, 1: Structured AI Notes
+  int _selectedTabIndex =
+      0; // 0: Live Transcript Editor, 1: Structured AI Notes
 
   late AnimationController _pulseController;
 
@@ -95,6 +102,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
   @override
   void initState() {
     super.initState();
+    _synthesisMode = widget.initialMode;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -126,9 +134,14 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
   Future<void> _startRecording() async {
     final hasPermission = await VoiceService.instance.hasMicPermission();
     if (!hasPermission) {
-      final allowed = await VoiceService.instance.startRecording(onAutoStop: () {});
+      final allowed = await VoiceService.instance.startRecording(
+        onAutoStop: () {},
+      );
       if (!allowed) {
-        _showSnackBar('Microphone permission is required to dictate voice.', isError: true);
+        _showSnackBar(
+          'Microphone permission is required to dictate voice.',
+          isError: true,
+        );
         return;
       }
       await VoiceService.instance.cancelRecording();
@@ -176,21 +189,25 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
     });
 
     try {
-      final text = await VoiceService.instance.finishRecording(language: _spokenLanguage);
+      final text = await VoiceService.instance.finishRecording(
+        language: _spokenLanguage,
+      );
       if (text.trim().isNotEmpty) {
         String processedText = text.trim();
 
         // Check translation
         if (_targetLanguage != 'same' && _targetLanguage != _spokenLanguage) {
           setState(() {
-            _statusMessage = 'অনুবাদ কৰি থকা হৈছে (${_targetLangLabels[_targetLanguage]})...';
+            _statusMessage =
+                'অনুবাদ কৰি থকা হৈছে (${_targetLangLabels[_targetLanguage]})...';
           });
           final transRes = await ApiService.translateVoiceNotes(
             text: processedText,
             sourceLang: _spokenLanguage,
             targetLang: _targetLanguage,
           );
-          if (transRes['success'] == true && transRes['translated_text'] != null) {
+          if (transRes['success'] == true &&
+              transRes['translated_text'] != null) {
             processedText = transRes['translated_text'].toString().trim();
           }
         }
@@ -234,7 +251,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
         _statusMessage = 'চূড়ান্ত বাক্য লিখি থকা হৈছে...';
       });
       try {
-        final text = await VoiceService.instance.finishRecording(language: _spokenLanguage);
+        final text = await VoiceService.instance.finishRecording(
+          language: _spokenLanguage,
+        );
         if (text.trim().isNotEmpty) {
           String processedText = text.trim();
           if (_targetLanguage != 'same' && _targetLanguage != _spokenLanguage) {
@@ -243,7 +262,8 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
               sourceLang: _spokenLanguage,
               targetLang: _targetLanguage,
             );
-            if (transRes['success'] == true && transRes['translated_text'] != null) {
+            if (transRes['success'] == true &&
+                transRes['translated_text'] != null) {
               processedText = transRes['translated_text'].toString().trim();
             }
           }
@@ -274,7 +294,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
 
     setState(() {
       _transcriptController.text = updated;
-      _transcriptController.selection = TextSelection.collapsed(offset: updated.length);
+      _transcriptController.selection = TextSelection.collapsed(
+        offset: updated.length,
+      );
     });
 
     // Auto-scroll to bottom
@@ -319,7 +341,8 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
           sourceLang: _spokenLanguage,
           targetLang: _targetLanguage,
         );
-        if (transRes['success'] == true && transRes['translated_text'] != null) {
+        if (transRes['success'] == true &&
+            transRes['translated_text'] != null) {
           text = transRes['translated_text'];
         }
       }
@@ -347,7 +370,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
   Future<void> _synthesizeNotes() async {
     final transcript = _transcriptController.text.trim();
     if (transcript.length < 5) {
-      _showSnackBar('Please speak or type some text first before generating notes.', isError: true);
+      _showSnackBar(
+        'Please speak or type some text first before generating notes.',
+        isError: true,
+      );
       return;
     }
 
@@ -375,7 +401,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
       });
       _showSnackBar('✨ Structured notes generated successfully!');
     } else {
-      _showSnackBar(res['error'] ?? 'Could not synthesize notes.', isError: true);
+      _showSnackBar(
+        res['error'] ?? 'Could not synthesize notes.',
+        isError: true,
+      );
     }
   }
 
@@ -386,7 +415,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
         : _transcriptController.text.trim();
 
     if (content.isEmpty) {
-      _showSnackBar('No content to export. Speak or type some notes first.', isError: true);
+      _showSnackBar(
+        'No content to export. Speak or type some notes first.',
+        isError: true,
+      );
       return;
     }
 
@@ -444,7 +476,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Clear Transcript?', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Clear Transcript?',
+          style: TextStyle(color: Colors.white),
+        ),
         content: const Text(
           'Are you sure you want to delete all spoken text and generated notes?',
           style: TextStyle(color: Color(0xFF94A3B8)),
@@ -452,7 +487,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -475,7 +513,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        content: Text(
+          message,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: isError ? Colors.redAccent : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -498,9 +539,14 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
     final cardBg = isDark ? AppTheme.bgCard : Colors.white;
     final borderColor = isDark ? AppTheme.borderColor : const Color(0xFFE2E8F0);
     final textPrimary = isDark ? AppTheme.textPrimary : const Color(0xFF0F172A);
-    final textSecondary = isDark ? AppTheme.textSecondary : const Color(0xFF64748B);
+    final textSecondary = isDark
+        ? AppTheme.textSecondary
+        : const Color(0xFF64748B);
 
-    final wordCount = _transcriptController.text.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).length;
+    final wordCount = _transcriptController.text
+        .split(RegExp(r'\s+'))
+        .where((s) => s.isNotEmpty)
+        .length;
 
     return Scaffold(
       backgroundColor: bgMain,
@@ -523,7 +569,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -547,12 +596,20 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.cleaning_services_rounded, color: textSecondary, size: 20),
+            icon: Icon(
+              Icons.cleaning_services_rounded,
+              color: textSecondary,
+              size: 20,
+            ),
             tooltip: 'Purify Assamese (ৰ & ৱ)',
             onPressed: _purifyTextScript,
           ),
           IconButton(
-            icon: Icon(Icons.delete_outline_rounded, color: textSecondary, size: 20),
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              color: textSecondary,
+              size: 20,
+            ),
             tooltip: 'Clear',
             onPressed: _clearContent,
           ),
@@ -566,7 +623,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -595,17 +654,41 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
             ),
 
             // Language & Mode Bar
-            _buildLanguageConfigBar(isDark, cardBg, borderColor, textPrimary, textSecondary),
+            _buildLanguageConfigBar(
+              isDark,
+              cardBg,
+              borderColor,
+              textPrimary,
+              textSecondary,
+            ),
 
             // Main Editor Body
             Expanded(
               child: _selectedTabIndex == 0
-                  ? _buildTranscriptEditor(isDark, cardBg, borderColor, textPrimary, textSecondary)
-                  : _buildStructuredNotesView(isDark, cardBg, borderColor, textPrimary, textSecondary),
+                  ? _buildTranscriptEditor(
+                      isDark,
+                      cardBg,
+                      borderColor,
+                      textPrimary,
+                      textSecondary,
+                    )
+                  : _buildStructuredNotesView(
+                      isDark,
+                      cardBg,
+                      borderColor,
+                      textPrimary,
+                      textSecondary,
+                    ),
             ),
 
             // Bottom Voice Dictation & Action Console
-            _buildBottomVoiceConsole(isDark, cardBg, borderColor, textPrimary, textSecondary),
+            _buildBottomVoiceConsole(
+              isDark,
+              cardBg,
+              borderColor,
+              textPrimary,
+              textSecondary,
+            ),
           ],
         ),
       ),
@@ -627,9 +710,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF10B981)
-              : Colors.transparent,
+          color: active ? const Color(0xFF10B981) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           boxShadow: active
               ? [
@@ -637,7 +718,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                     color: const Color(0xFF10B981).withValues(alpha: 0.35),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -661,7 +742,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
             if (badge != null) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 1.5,
+                ),
                 decoration: BoxDecoration(
                   color: active
                       ? Colors.white.withValues(alpha: 0.25)
@@ -712,7 +796,11 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                   .toList(),
               child: Row(
                 children: [
-                  const Icon(Icons.mic_rounded, size: 14, color: Color(0xFF10B981)),
+                  const Icon(
+                    Icons.mic_rounded,
+                    size: 14,
+                    color: Color(0xFF10B981),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -725,13 +813,22 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.arrow_drop_down_rounded, size: 18, color: textSecondary),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: textSecondary,
+                  ),
                 ],
               ),
             ),
           ),
 
-          Container(width: 1, height: 20, color: borderColor, margin: const EdgeInsets.symmetric(horizontal: 8)),
+          Container(
+            width: 1,
+            height: 20,
+            color: borderColor,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+          ),
 
           // Target Language Selector
           Expanded(
@@ -743,20 +840,32 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                   .toList(),
               child: Row(
                 children: [
-                  const Icon(Icons.translate_rounded, size: 14, color: Color(0xFF06B6D4)),
+                  const Icon(
+                    Icons.translate_rounded,
+                    size: 14,
+                    color: Color(0xFF06B6D4),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      _targetLanguage == 'same' ? 'Keep Original' : _targetLangLabels[_targetLanguage]!,
+                      _targetLanguage == 'same'
+                          ? 'Keep Original'
+                          : _targetLangLabels[_targetLanguage]!,
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: _targetLanguage != 'same' ? const Color(0xFF06B6D4) : textPrimary,
+                        color: _targetLanguage != 'same'
+                            ? const Color(0xFF06B6D4)
+                            : textPrimary,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.arrow_drop_down_rounded, size: 18, color: textSecondary),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -764,11 +873,17 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
 
           // File Audio Upload Button
           IconButton(
-            icon: Icon(Icons.upload_file_rounded, size: 19, color: textSecondary),
+            icon: Icon(
+              Icons.upload_file_rounded,
+              size: 19,
+              color: textSecondary,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             tooltip: 'Transcribe Audio File (mp3/m4a)',
-            onPressed: _isListening || _isProcessing ? null : _pickAndTranscribeAudio,
+            onPressed: _isListening || _isProcessing
+                ? null
+                : _pickAndTranscribeAudio,
           ),
         ],
       ),
@@ -848,14 +963,20 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                     : const Color(0xFF06B6D4).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: _isListening ? const Color(0xFF10B981) : const Color(0xFF06B6D4),
+                  color: _isListening
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF06B6D4),
                   width: 0.6,
                 ),
               ),
               child: Row(
                 children: [
                   if (_isProcessing)
-                    const SpinKitRing(color: Color(0xFF06B6D4), size: 14, lineWidth: 2)
+                    const SpinKitRing(
+                      color: Color(0xFF06B6D4),
+                      size: 14,
+                      lineWidth: 2,
+                    )
                   else
                     FadeTransition(
                       opacity: _pulseController,
@@ -875,7 +996,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: _isListening ? const Color(0xFF10B981) : const Color(0xFF06B6D4),
+                        color: _isListening
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF06B6D4),
                       ),
                     ),
                   ),
@@ -900,13 +1023,10 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
               child: TextField(
                 controller: _transcriptController,
                 maxLines: null,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.6,
-                  color: textPrimary,
-                ),
+                style: TextStyle(fontSize: 15, height: 1.6, color: textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Tap the microphone below and speak.\n\nYour words will automatically type here in real-time in authentic Assamese or your chosen language...',
+                  hintText:
+                      'Tap the microphone below and speak.\n\nYour words will automatically type here in real-time in authentic Assamese or your chosen language...',
                   hintStyle: TextStyle(
                     fontSize: 14,
                     height: 1.5,
@@ -945,7 +1065,11 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                   color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.auto_stories_rounded, size: 32, color: Color(0xFF8B5CF6)),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  size: 32,
+                  color: Color(0xFF8B5CF6),
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -960,18 +1084,30 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
               Text(
                 'Speak or type your transcript in the editor, select a mode below, and tap "Synthesize Structured Notes".',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: textSecondary, height: 1.4),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: textSecondary,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF10B981),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
                 icon: const Icon(Icons.edit_note_rounded, size: 18),
-                label: const Text('Back to Spoken Editor', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: const Text(
+                  'Back to Spoken Editor',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () => setState(() => _selectedTabIndex = 0),
               ),
             ],
@@ -989,7 +1125,11 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
             const SizedBox(height: 20),
             Text(
               'Synthesizing Structured Notes...',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textPrimary),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: textPrimary,
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
@@ -1043,12 +1183,18 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF10B981)),
+                  const Icon(
+                    Icons.bolt_rounded,
+                    size: 16,
+                    color: Color(0xFF10B981),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1068,13 +1214,30 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
             child: Markdown(
               data: _structuredMarkdown,
               selectable: true,
-              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                h1: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: textPrimary),
-                h2: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF10B981)),
-                h3: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textPrimary),
-                p: TextStyle(fontSize: 14, height: 1.55, color: textPrimary),
-                listBullet: const TextStyle(color: Color(0xFF10B981)),
-              ),
+              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                  .copyWith(
+                    h1: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: textPrimary,
+                    ),
+                    h2: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF10B981),
+                    ),
+                    h3: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                    p: TextStyle(
+                      fontSize: 14,
+                      height: 1.55,
+                      color: textPrimary,
+                    ),
+                    listBullet: const TextStyle(color: Color(0xFF10B981)),
+                  ),
             ),
           ),
         ],
@@ -1128,10 +1291,14 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                     selectedColor: m['color'] as Color,
                     labelStyle: TextStyle(
                       fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected ? Colors.white : textSecondary,
                     ),
-                    backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    backgroundColor: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF1F5F9),
                     side: BorderSide(
                       color: isSelected ? (m['color'] as Color) : borderColor,
                       width: 0.6,
@@ -1173,9 +1340,17 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (_isSynthesizing)
-                          const SpinKitRing(color: Colors.white, size: 16, lineWidth: 2)
+                          const SpinKitRing(
+                            color: Colors.white,
+                            size: 16,
+                            lineWidth: 2,
+                          )
                         else
-                          const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         const SizedBox(width: 6),
                         const Flexible(
                           child: Text(
@@ -1219,8 +1394,12 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                         boxShadow: [
                           BoxShadow(
                             color: _isListening
-                                ? Colors.redAccent.withValues(alpha: 0.4 + 0.5 * lv)
-                                : const Color(0xFF10B981).withValues(alpha: 0.35),
+                                ? Colors.redAccent.withValues(
+                                    alpha: 0.4 + 0.5 * lv,
+                                  )
+                                : const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.35),
                             blurRadius: _isListening ? (12 + 16 * lv) : 10,
                             spreadRadius: _isListening ? (2 + 6 * lv) : 0,
                           ),
@@ -1228,9 +1407,15 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       ),
                       child: Center(
                         child: _isProcessing
-                            ? const SpinKitRing(color: Colors.white, size: 24, lineWidth: 2.5)
+                            ? const SpinKitRing(
+                                color: Colors.white,
+                                size: 24,
+                                lineWidth: 2.5,
+                              )
                             : Icon(
-                                _isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                                _isListening
+                                    ? Icons.stop_rounded
+                                    : Icons.mic_rounded,
                                 color: Colors.white,
                                 size: 28,
                               ),
@@ -1252,7 +1437,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                     height: 48,
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: borderColor),
                     ),
@@ -1260,9 +1447,17 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (_isExporting)
-                          const SpinKitRing(color: Color(0xFF10B981), size: 16, lineWidth: 2)
+                          const SpinKitRing(
+                            color: Color(0xFF10B981),
+                            size: 16,
+                            lineWidth: 2,
+                          )
                         else
-                          const Icon(Icons.description_rounded, color: Color(0xFF10B981), size: 18),
+                          const Icon(
+                            Icons.description_rounded,
+                            color: Color(0xFF10B981),
+                            size: 18,
+                          ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -1301,9 +1496,13 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                 child: Row(
                   children: [
                     Icon(
-                      _isContinuousMode ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                      _isContinuousMode
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
                       size: 13,
-                      color: _isContinuousMode ? const Color(0xFF10B981) : textSecondary,
+                      color: _isContinuousMode
+                          ? const Color(0xFF10B981)
+                          : textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -1311,7 +1510,9 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen> w
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,
-                        color: _isContinuousMode ? const Color(0xFF10B981) : textSecondary,
+                        color: _isContinuousMode
+                            ? const Color(0xFF10B981)
+                            : textSecondary,
                       ),
                     ),
                   ],
