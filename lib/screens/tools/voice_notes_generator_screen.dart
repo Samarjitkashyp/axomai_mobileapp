@@ -72,28 +72,24 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
     {
       'id': 'study',
       'label': 'Study Notes',
-      'assamese': 'পাঠৰ টোকা',
       'icon': Icons.school_rounded,
       'color': Color(0xFF8B5CF6),
     },
     {
       'id': 'meeting',
       'label': 'Meeting Minutes',
-      'assamese': 'কাৰ্যবিৱৰণী',
       'icon': Icons.business_center_rounded,
       'color': Color(0xFF06B6D4),
     },
     {
       'id': 'ideas',
       'label': 'Brainstorm',
-      'assamese': 'ধাৰণা & চিন্তা',
       'icon': Icons.lightbulb_rounded,
       'color': Color(0xFFF59E0B),
     },
     {
       'id': 'summary',
       'label': 'Summary',
-      'assamese': 'সাৰাংশ',
       'icon': Icons.bolt_rounded,
       'color': Color(0xFF10B981),
     },
@@ -1283,7 +1279,7 @@ class _VoiceNotesGeneratorScreenState extends State<VoiceNotesGeneratorScreen>
                       size: 14,
                       color: isSelected ? Colors.white : (m['color'] as Color),
                     ),
-                    label: Text('${m['label']} (${m['assamese']})'),
+                    label: Text(m['label'] as String),
                     selected: isSelected,
                     onSelected: (val) {
                       if (val) setState(() => _synthesisMode = m['id']);

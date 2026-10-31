@@ -10,7 +10,6 @@ class ToolsHubScreen extends StatelessWidget {
     {
       'id': 'study',
       'title': 'Study Notes',
-      'assamese': 'পাঠৰ টোকা',
       'description':
           'Chapter-wise structured notes, definitions, formulas, and high-yield exam revision points ⭐.',
       'icon': Icons.school_rounded,
@@ -20,7 +19,6 @@ class ToolsHubScreen extends StatelessWidget {
     {
       'id': 'meeting',
       'title': 'Meeting Minutes',
-      'assamese': 'কাৰ্যবিৱৰণী',
       'description':
           'Meeting agenda, attendee decisions, key discussion points, and clear follow-up action items.',
       'icon': Icons.business_center_rounded,
@@ -30,7 +28,6 @@ class ToolsHubScreen extends StatelessWidget {
     {
       'id': 'ideas',
       'title': 'Brainstorm & Ideas',
-      'assamese': 'ধাৰণা & চিন্তা',
       'description':
           'Unfiltered creative thoughts converted into organized, categorized, and actionable concepts.',
       'icon': Icons.lightbulb_rounded,
@@ -40,7 +37,6 @@ class ToolsHubScreen extends StatelessWidget {
     {
       'id': 'summary',
       'title': 'Executive Summary',
-      'assamese': 'সাৰাংশ',
       'description':
           'High-impact 5-point executive recap of long lectures, conversations, or voice recordings.',
       'icon': Icons.bolt_rounded,
@@ -184,7 +180,7 @@ class ToolsHubScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 14),
 
-                        // Title, Assamese Subtitle, Description
+                        // Title, Subtitle, Description
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +225,7 @@ class ToolsHubScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 3),
                               const Text(
-                                'কণ্ঠধ্বনিৰ পৰা স্বয়ংক্ৰিয় লিখিত টোকা',
+                                'Speech to Structured Text & Notes',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -282,7 +278,7 @@ class ToolsHubScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'নোটৰ আৰ্হি নিৰ্বাচন কৰি কওক',
+                      'Select a template to start dictating',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -368,7 +364,7 @@ class ToolsHubScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 12),
 
-                            // Text Column (Fully constrained to prevent any RenderFlex overflow)
+                            // Text Column
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,17 +407,6 @@ class ToolsHubScreen extends StatelessWidget {
                                         ),
                                       ),
                                     ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    template['assamese'] as String,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: color,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 5),
                                   Text(
