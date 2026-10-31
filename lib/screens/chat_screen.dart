@@ -18,6 +18,7 @@ import 'auth_gate_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'tools_hub_screen.dart';
+import 'voice_assistant_screen.dart';
 import '../widgets/header_bar.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/landing_hero.dart';
@@ -104,7 +105,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final old = _inputController.text.trim();
       _inputController.text = old.isEmpty ? text : '$old $text';
       _inputController.selection = TextSelection.collapsed(offset: _inputController.text.length);
-      _handleSendMessage(); // spoken words go straight to the AI: no second tap
     } on VoiceException catch (e) {
       _snack(e.message);
     }
@@ -501,7 +501,9 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              listening ? 'Listening... speak now' : 'Understanding what you said...',
+              listening
+                  ? (_language == 'assamese' ? 'শুনিয়ে আছো... অসমীয়াত কওক' : 'Listening... speak now')
+                  : (_language == 'assamese' ? 'লিখি থকা হৈছে...' : 'Writing down what you said...'),
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
@@ -798,6 +800,15 @@ class _ChatScreenState extends State<ChatScreen> {
             _buildAttachmentPreview(),
             _buildListeningStrip(),
 
+            // Floating Live Voice Assistant Bot (ChatGPT Voice / Gemini Live Mode)
+            Padding(
+              padding: const EdgeInsets.only(right: 16, bottom: 6),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _buildFloatingVoiceBotButton(),
+              ),
+            ),
+
             // Bottom Floating Input Bar
             InputBar(
               controller: _inputController,
@@ -860,6 +871,73 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(
               label,
               style: TextStyle(color: chipText, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingVoiceBotButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VoiceAssistantScreen(
+              isDarkMode: widget.isDarkMode,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF10B981), Color(0xFF8B5CF6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.smart_toy_rounded,
+                color: Color(0xFF10B981),
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Voice AI',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.graphic_eq_rounded,
+              color: Colors.white,
+              size: 15,
             ),
           ],
         ),

@@ -17,6 +17,7 @@ import 'tools/video_download_screen.dart';
 import 'tools/image_compress_screen.dart';
 import 'tools/background_remover_screen.dart';
 import 'tools/ai_notes_generator_screen.dart';
+import 'tools/voice_notes_generator_screen.dart';
 
 class ToolCardData {
   final String id;
@@ -54,7 +55,17 @@ class _ToolsHubScreenState extends State<ToolsHubScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   static final List<ToolCardData> _tools = [
-    // ─── 1. AI Intelligence & Notes ─────────────────────────────────
+    // ─── 1. AI Intelligence & Voice ─────────────────────────────────
+    ToolCardData(
+      id: 'voice-notes',
+      title: 'Voice Notes Generator',
+      category: 'AI Tools',
+      description: 'Dictate in real-time in Assamese, English, or Hindi. Auto-type, synthesize chapter notes, and export to Word.',
+      icon: Icons.keyboard_voice_rounded,
+      accentColor: const Color(0xFF10B981),
+      badge: 'NEW ⭐',
+      screenBuilder: () => const VoiceNotesGeneratorScreen(),
+    ),
     ToolCardData(
       id: 'ai-notes',
       title: 'AI Notes Generator',

@@ -86,7 +86,10 @@ class VoiceService {
 
   Future<Map<String, String>> _headers() async {
     final cookie = await AuthService.getSessionCookie();
-    return {if (cookie != null) 'Cookie': cookie};
+    return {
+      if (cookie != null) 'Cookie': cookie,
+      'User-Agent': 'Dart/Flutter-AxomAI',
+    };
   }
 
   /// Fetches the audio of one piece. Returns bytes, or throws [VoiceException] with a message fit for the user.
@@ -158,8 +161,11 @@ class VoiceService {
   String? _path;
 
   static const int maxSeconds = 40;
-  static const double silenceDb = -42; // quieter than this counts as silence
-  static const int silenceStopMs = 1400; // stop after this much quiet once speech was heard
+  static const int calibrateMs = 600; // the first moments set the room's (and the mic's) own noise level
+  static const double speechAboveNoiseDb = 9; // speech is this much louder than that noise level
+  static const double minSpeechDb = -52; // the speech threshold never goes below / above these,
+  static const double maxSpeechDb = -32; // whatever the mic (a headset mic is quiet, a phone mic is loud)
+  static const int silenceStopMs = 1200; // stop after 1.2s quiet once speech was heard (matches web speed)
 
   Future<bool> hasMicPermission() => _recorder.hasPermission();
 
@@ -170,20 +176,40 @@ class VoiceService {
     final dir = await getTemporaryDirectory();
     _path = '${dir.path}/axom_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
     await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc, sampleRate: 16000, numChannels: 1, bitRate: 32000),
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        sampleRate: 16000,
+        numChannels: 1,
+        bitRate: 96000, // 32 kbps smeared the Assamese sounds
+        autoGain: true, // a quiet (headset) mic is brought up
+        echoCancel: true,
+        noiseSuppress: true,
+        androidConfig: AndroidRecordConfig(audioSource: AndroidAudioSource.voiceRecognition),
+      ),
       path: _path!,
     );
     recording.value = true;
     final started = DateTime.now();
     var heardSpeech = false;
     DateTime? quietSince;
+    var noiseFloor = 0.0; // the quietest moment of the first listen: speech in it does not raise it
+    var calibrating = true;
+    var speechDb = minSpeechDb;
     _poll?.cancel();
     _poll = Timer.periodic(const Duration(milliseconds: 100), (t) async {
       if (!recording.value) return;
       final amp = await _recorder.getAmplitude();
-      level.value = ((amp.current + 55) / 45).clamp(0.0, 1.0);
+      final db = amp.current.isFinite ? amp.current : -90.0;
+      level.value = ((db - (speechDb - 13)) / 45).clamp(0.0, 1.0);
       final now = DateTime.now();
-      if (amp.current > silenceDb + 8) {
+      if (now.difference(started).inMilliseconds < calibrateMs) {
+        noiseFloor = calibrating ? db : (db < noiseFloor ? db : noiseFloor);
+        calibrating = false;
+        speechDb = (noiseFloor + speechAboveNoiseDb).clamp(minSpeechDb, maxSpeechDb);
+        if (db > speechDb) heardSpeech = true; // already talking while it listened to the room
+        return;
+      }
+      if (db > speechDb) {
         heardSpeech = true;
         quietSince = null;
       } else if (heardSpeech) {
@@ -244,8 +270,13 @@ class VoiceService {
         throw VoiceException(_friendly(streamed.statusCode, body, listening: false));
       }
       final data = jsonDecode(body) as Map<String, dynamic>;
-      final text = (data['text'] as String? ?? '').trim();
-      if (text.isEmpty) throw VoiceException('I did not catch that. Please try again.');
+      var text = (data['text'] as String? ?? '').trim();
+      if (text.isEmpty || isGibberish(text)) {
+        throw VoiceException('I did not catch any words. Please speak a little closer and try again.');
+      }
+      if (language == 'assamese') {
+        text = purifyAssamese(text);
+      }
       return text;
     } on VoiceException {
       rethrow;
@@ -257,6 +288,96 @@ class VoiceService {
       transcribing.value = false;
       _deleteTemp();
     }
+  }
+
+  /// Transcribes a user-selected audio file (mp3, m4a, wav, etc.) via Axom AI STT
+  Future<String> transcribeAudioFile({required String filePath, required String language}) async {
+    transcribing.value = true;
+    try {
+      final file = File(filePath);
+      if (!await file.exists() || await file.length() < 500) {
+        throw VoiceException('Selected audio file is empty or missing.');
+      }
+      if (await file.length() > 25 * 1024 * 1024) {
+        throw VoiceException('Audio file exceeds the 25MB limit.');
+      }
+      final base = await StorageService.loadApiBaseUrl();
+      final req = http.MultipartRequest('POST', Uri.parse('$base/api/stt/'));
+      req.headers.addAll(await _headers());
+      req.fields['language'] = language;
+      final ext = filePath.split('.').last.toLowerCase();
+      req.files.add(await http.MultipartFile.fromPath('audio', filePath, filename: 'voice.$ext'));
+      final streamed = await req.send().timeout(const Duration(seconds: 90));
+      final body = await streamed.stream.bytesToString();
+      if (streamed.statusCode != 200) {
+        throw VoiceException(_friendly(streamed.statusCode, body, listening: false));
+      }
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      var text = (data['text'] as String? ?? '').trim();
+      if (text.isEmpty || isGibberish(text)) {
+        throw VoiceException('Could not detect speech in the uploaded audio.');
+      }
+      if (language == 'assamese') {
+        text = purifyAssamese(text);
+      }
+      return text;
+    } on VoiceException {
+      rethrow;
+    } on TimeoutException {
+      throw VoiceException('Speech processing timed out. Please try a shorter audio clip.');
+    } catch (e) {
+      throw VoiceException('Audio transcription error: ${e.toString()}');
+    } finally {
+      transcribing.value = false;
+    }
+  }
+
+  // ─── Assamese Script & Hallucination Sanitizer ───────────────
+  static const _hallucinations = {
+    'thank you',
+    'thanks for watching',
+    'thank you for watching',
+    'you',
+    'bye',
+    'bye bye',
+    'okay',
+    'the end',
+    'no_speech',
+  };
+
+  static bool isGibberish(String text) {
+    if (text.isEmpty) return true;
+    final t = text.trim().toLowerCase().replaceAll(RegExp(r'[.!?,]'), '');
+    if (_hallucinations.contains(t)) return true;
+    final words = text.split(RegExp(r'\s+'));
+    if (words.isNotEmpty &&
+        words.every((w) {
+          final stripped = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+          return stripped.length >= 3 &&
+              !stripped.contains(RegExp(r'[aeiouyAEIOUY]')) &&
+              RegExp(r'^[a-zA-Z]+$').hasMatch(stripped);
+        })) {
+      return true;
+    }
+    return false;
+  }
+
+  static String purifyAssamese(String text) {
+    if (text.isEmpty) return text;
+    var s = text.replaceAll('\u09B0', '\u09F0'); // Bengali 'র' -> Assamese 'ৰ'
+    s = s
+        .replaceAll('কোবা', 'কোৱা')
+        .replaceAll('খোবা', 'খোৱা')
+        .replaceAll('যোবা', 'যোৱা')
+        .replaceAll('হোবা', 'হোৱা')
+        .replaceAll('লোবা', 'লোৱা')
+        .replaceAll('শোবা', 'শোৱা')
+        .replaceAll('দিবা', 'দিৱা')
+        .replaceAll('নহবা', 'নহ’বা')
+        .replaceAll(RegExp(r'\bহব\b'), 'হ’ব')
+        .replaceAll(RegExp(r'\bনহব\b'), 'নহ’ব');
+    s = s.replaceAll(RegExp(r'\s+([।?!,])'), r'$1');
+    return s.trim();
   }
 
   // ─── Messages ────────────────────────────────────────────────

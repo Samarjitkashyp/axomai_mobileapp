@@ -79,7 +79,7 @@ class StorageService {
 
   static Future<String> loadVoice() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('axom_ai_voice') ?? 'female';
+    return prefs.getString('axom_ai_voice') ?? 'male';
   }
 
   static Future<void> saveVoice(String v) async {

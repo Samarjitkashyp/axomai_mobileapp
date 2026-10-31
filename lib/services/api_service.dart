@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import '../models/chat_message.dart';
@@ -447,6 +449,114 @@ class ApiService {
         String downloadUrl = data['download_url'] ?? '';
         if (downloadUrl.startsWith('/')) downloadUrl = '$baseUrl$downloadUrl';
         return {'success': true, 'download_url': downloadUrl, 'filename': data['filename']};
+      }
+      return {'success': false, 'error': 'Export failed (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // ─── 5B. VOICE NOTES GENERATOR & TRANSLATION ────────────────────────
+  static Future<Map<String, dynamic>> synthesizeVoiceNotes({
+    required String transcript,
+    String mode = 'study',
+    String language = 'assamese',
+  }) async {
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/voice-notes/synthesize/');
+    try {
+      final sessionCookie = await AuthService.getSessionCookie();
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (sessionCookie != null && sessionCookie.isNotEmpty) 'Cookie': sessionCookie,
+        },
+        body: jsonEncode({
+          'transcript': transcript,
+          'mode': mode,
+          'language': language,
+        }),
+      ).timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'error': 'Synthesis failed (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> translateVoiceNotes({
+    required String text,
+    required String sourceLang,
+    required String targetLang,
+  }) async {
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/voice-notes/translate/');
+    try {
+      final sessionCookie = await AuthService.getSessionCookie();
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (sessionCookie != null && sessionCookie.isNotEmpty) 'Cookie': sessionCookie,
+        },
+        body: jsonEncode({
+          'text': text,
+          'source_lang': sourceLang,
+          'target_lang': targetLang,
+        }),
+      ).timeout(const Duration(seconds: 25));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {'success': false, 'error': 'Translation failed (${response.statusCode})'};
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> exportVoiceNotesDocx({
+    required String title,
+    required String notes,
+    String mode = 'Spoken Notes',
+  }) async {
+    final baseUrl = await StorageService.loadApiBaseUrl();
+    final url = Uri.parse('$baseUrl/api/voice-notes/export-docx/');
+    try {
+      final sessionCookie = await AuthService.getSessionCookie();
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (sessionCookie != null && sessionCookie.isNotEmpty) 'Cookie': sessionCookie,
+        },
+        body: jsonEncode({
+          'title': title,
+          'notes': notes,
+          'mode': mode,
+          'format': 'json',
+        }),
+      ).timeout(const Duration(seconds: 35));
+
+      if (response.statusCode == 200) {
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map<String, dynamic> && data['download_url'] != null) {
+            String dl = data['download_url'];
+            if (dl.startsWith('/')) dl = '$baseUrl$dl';
+            return {'success': true, 'download_url': dl, 'filename': data['filename']};
+          }
+        } catch (_) {}
+
+        final dir = await getTemporaryDirectory();
+        final clean = title.replaceAll(RegExp(r'[^\w\-_.]'), '_');
+        final file = File('${dir.path}/${clean}_AxomAI.docx');
+        await file.writeAsBytes(response.bodyBytes);
+        return {'success': true, 'file_path': file.path};
       }
       return {'success': false, 'error': 'Export failed (${response.statusCode})'};
     } catch (e) {
